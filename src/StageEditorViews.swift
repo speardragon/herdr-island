@@ -18,11 +18,24 @@ struct ScrollCanvas<Content: View>: View {
     }
 }
 
+private struct PlaybackElapsedKey: EnvironmentKey {
+    static let defaultValue: TimeInterval? = nil
+}
+
+extension EnvironmentValues {
+    /// Set by the promo renderer: typing follows the video's clock instead of the wall clock.
+    var playbackElapsed: TimeInterval? {
+        get { self[PlaybackElapsedKey.self] }
+        set { self[PlaybackElapsedKey.self] = newValue }
+    }
+}
+
 /// Reveals `text` as if typed, then swaps to static text so nothing keeps redrawing.
 struct TypingText<Content: View>: View {
     let text: String
     let key: String
     let content: (String, Bool) -> Content
+    @Environment(\.playbackElapsed) private var playbackElapsed
 
     @State private var start = Date()
     @State private var finished = false
@@ -30,6 +43,15 @@ struct TypingText<Content: View>: View {
     @State private var generation = 0
 
     var body: some View {
+        if let elapsed = playbackElapsed {
+            let count = Typing.revealed(total: text.count, elapsed: elapsed)
+            content(String(text.prefix(count)), count < text.count)
+        } else {
+            live
+        }
+    }
+
+    private var live: some View {
         Group {
             if finished || text.isEmpty {
                 content(text, false)

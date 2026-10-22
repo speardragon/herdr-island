@@ -14,7 +14,9 @@ without leaving what you are working on.
 ![Swift](https://img.shields.io/badge/Swift-SwiftUI%20%2B%20AppKit-F05138?logo=swift&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/license-MIT-3DA639)
 
-<img src="docs/images/en/hero.png" alt="Herdr Island open from the notch, showing a Bash permission prompt, a finished Codex task and the agents still working" width="860">
+<a href="docs/media/promo-en.mp4"><img src="docs/media/promo-en.gif" alt="Herdr Island in action: a permission prompt opens from the notch and is approved, the details pane widens to show a live edit, the stage grows to full size, and the island folds back into the notch" width="860"></a>
+
+<sub>15 seconds · <a href="docs/media/promo-en.mp4">watch in full quality (MP4)</a></sub>
 
 </div>
 
@@ -293,6 +295,7 @@ It closes all of them, and the same goes for notch + menu bar.
 swiftc -O src/*.swift -o bin/herdr-island     # build
 ./tests/run.sh                                # tests (parser, config, transcripts, live-stage logic)
 ./bin/herdr-island --demo docs/images/en en   # README screenshots (made-up data)
+./bin/herdr-island --promo /tmp/promo en      # promo video frames (encode with ffmpeg; see docs/media)
 ./bin/herdr-island --snapshot /tmp/island en  # every view as PNG, from live state
 ./bin/herdr-island dump                       # window state and blocked screens
 ./bin/herdr-island quit; sleep 1; ./bin/ensure-running.sh   # restart after a rebuild

@@ -9,10 +9,20 @@ import AppKit
 // herdr-island choose:PANE:N | answer:PANE:N:TEXT   answer a blocked prompt (what the buttons do)
 // herdr-island --snapshot DIR [en|ko]   render every view to PNG (no daemon)
 // herdr-island --demo DIR [en|ko]       README screenshots from made-up demo data
+// herdr-island --promo DIR [en|ko] [t,…] promo video frames (or just the stills at those times)
 // herdr-island mode:notch|mode:menubar|mode:both|mode:auto|cycle-mode|reload|quit
 // A second invocation forwards its command to the running daemon and exits.
 
 let command = CommandLine.arguments.dropFirst().first ?? ""
+
+if command == "--promo" {
+    let directory = URL(fileURLWithPath: CommandLine.arguments.dropFirst(2).first ?? ".")
+    Localization.language = CommandLine.arguments.dropFirst(3).first.flatMap(AppLanguage.init(rawValue:)) ?? .system
+    let stills = (CommandLine.arguments.dropFirst(4).first ?? "").split(separator: ",").compactMap { Double($0) }
+    NSApplication.shared.setActivationPolicy(.accessory)
+    Promo.run(into: directory, stills: stills)
+    NSApplication.shared.run()
+}
 
 if command == "--demo" {
     let directory = URL(fileURLWithPath: CommandLine.arguments.dropFirst(2).first ?? ".")

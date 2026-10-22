@@ -14,7 +14,9 @@
 ![Swift](https://img.shields.io/badge/Swift-SwiftUI%20%2B%20AppKit-F05138?logo=swift&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/license-MIT-3DA639)
 
-<img src="docs/images/ko/hero.png" alt="노치에서 펼쳐진 Herdr Island. Bash 실행 승인 요청, 완료된 Codex 작업, 작업 중인 에이전트 목록이 보인다" width="860">
+<a href="docs/media/promo-ko.mp4"><img src="docs/media/promo-ko.gif" alt="Herdr Island 동작 화면: 노치에서 권한 요청이 펼쳐져 승인되고, 상세 패널이 넓어지며 실시간 편집이 보이고, 크게 보기로 확장된 뒤 다시 노치로 접힌다" width="860"></a>
+
+<sub>15초 · <a href="docs/media/promo-ko.mp4">고화질로 보기(MP4)</a></sub>
 
 </div>
 
@@ -292,6 +294,7 @@ Write·Edit의 타이핑 효과는 완성된 내용을 최대 1.8초 동안 재�
 swiftc -O src/*.swift -o bin/herdr-island     # 빌드
 ./tests/run.sh                                # 테스트(파서, 설정, 트랜스크립트, 라이브 뷰 로직)
 ./bin/herdr-island --demo docs/images/ko ko   # README 스크린샷 생성(데모 데이터)
+./bin/herdr-island --promo /tmp/promo ko      # 홍보 영상 프레임 생성(ffmpeg로 인코딩, docs/media 참고)
 ./bin/herdr-island --snapshot /tmp/island ko  # 현재 상태로 모든 화면을 PNG로 렌더링
 ./bin/herdr-island dump                       # 창 상태와 blocked 화면 덤프
 ./bin/herdr-island quit; sleep 1; ./bin/ensure-running.sh   # 다시 빌드한 뒤 재시작
