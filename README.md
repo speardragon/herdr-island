@@ -18,6 +18,8 @@ without leaving what you are working on.
 
 <sub>15 seconds · <a href="docs/media/promo-en.mp4">watch in full quality (MP4)</a></sub>
 
+**Just point at the notch. It opens instantly.** No click, no shortcut, no window switching.
+
 </div>
 
 ---
@@ -31,6 +33,12 @@ Herdr Island moves that chore into the notch. When an agent needs you or finishe
 like a Dynamic Island and you answer it right there. On a Mac without a notch, the same panel drops from the menu bar.
 
 ## Features
+
+### Point at the notch, and it's open
+
+Move the pointer up to the notch and the island opens right away, in about a tenth of a second.
+Move away and it folds back. Checking on your agents is a flick of the mouse,
+and you never leave the app you're working in. Prefer clicking? Turn hover off in settings and click the notch instead.
 
 ### Answer permissions and questions in place
 
