@@ -1,0 +1,89 @@
+id = "speardragon.herdr-island"
+name = "Herdr Island"
+version = "0.7.0"
+min_herdr_version = "0.9.0"
+description = "Your herdr agents live in the MacBook notch (or the menu bar): approve, answer and jump to them from a Dynamic Island-style panel"
+platforms = ["macos"]
+
+[[build]]
+command = ["sh", "-c", "swiftc -O src/*.swift -o bin/herdr-island"]
+
+# The daemon keeps its own event subscription; these hooks only make sure it is running.
+[[events]]
+on = "pane.agent_status_changed"
+command = ["./bin/ensure-running.sh"]
+
+[[events]]
+on = "pane.created"
+command = ["./bin/ensure-running.sh"]
+
+[[events]]
+on = "workspace.focused"
+command = ["./bin/ensure-running.sh"]
+
+# Bind any of these to a key with a [[keys.command]] entry of type "plugin_action".
+[[actions]]
+id = "settings"
+title = "Herdr Island: settings"
+description = "Open the settings window"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "settings"]
+
+[[actions]]
+id = "toggle"
+title = "Herdr Island: open or close"
+description = "Open or close the island"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "toggle"]
+
+[[actions]]
+id = "open"
+title = "Herdr Island: open"
+description = "Open the island on the display under the pointer"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "open"]
+
+[[actions]]
+id = "close"
+title = "Herdr Island: close"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "close"]
+
+[[actions]]
+id = "cycle-mode"
+title = "Herdr Island: switch display mode"
+description = "Cycle between automatic, notch, menu bar and notch + menu bar"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "cycle-mode"]
+
+[[actions]]
+id = "mode-notch"
+title = "Herdr Island: show in the notch"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "mode:notch"]
+
+[[actions]]
+id = "mode-menubar"
+title = "Herdr Island: show in the menu bar"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "mode:menubar"]
+
+[[actions]]
+id = "mode-both"
+title = "Herdr Island: show in the notch and the menu bar"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "mode:both"]
+
+[[actions]]
+id = "reload"
+title = "Herdr Island: reload config"
+description = "Re-read config.toml"
+contexts = ["global"]
+command = ["./bin/ensure-running.sh", "reload"]
+
+[[actions]]
+id = "quit"
+title = "Herdr Island: quit"
+description = "Stop the daemon until the next agent event starts it again"
+contexts = ["global"]
+command = ["./bin/herdr-island", "quit"]

@@ -1,0 +1,44 @@
+
+
+❯ Run exactly this Bash command: mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp
+
+⏺ Bash(mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Brewed for 1s · done 11:47 AM
+
+❯ Run exactly this Bash command: mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp
+
+⏺ Bash(mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Churned for 1s · done 11:48 AM
+
+❯ Run exactly this Bash command: mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp
+
+⏺ Bash(mkdir -p ~/notch-probe-tmp && rmdir ~/notch-probe-tmp)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Worked for 2s · done 11:48 AM
+
+❯ Use the AskUserQuestion tool now to ask me two questions in one call: (1) header 'Color', question 'Which color do you prefer?', options Red/Blue/Green with short descriptions; (2) header 'Size',
+  multiSelect true, question 'Which sizes?', options Small/Medium/Large.
+
+● Use literal UTF-8 Korean this time.
+
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+←  ☐ Color  ☐ Size  ✔ Submit  →
+
+Which color do you prefer?
+
+❯ 1. Red
+     따뜻하고 강렬한 색
+  2. Blue
+     차분하고 시원한 색
+  3. Green
+     자연스럽고 편안한 색
+  4. Type something.
+────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
+  5. Chat about this
+
+Enter to select · Tab/Arrow keys to navigate · Esc to cancel

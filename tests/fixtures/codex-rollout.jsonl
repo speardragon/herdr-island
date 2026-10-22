@@ -1,0 +1,11 @@
+{"timestamp": "2026-10-22T04:00:00.000Z", "type": "session_meta", "payload": {"id": "s1", "cwd": "/p", "timestamp": "2026-10-22T04:00:00.000Z", "cli_version": "0.163.0"}}
+{"timestamp": "2026-10-22T04:00:00.000Z", "type": "turn_context", "payload": {"turn_id": "u1", "cwd": "/p", "model": "gpt-6-astra"}}
+{"timestamp": "2026-10-22T04:00:00.000Z", "type": "event_msg", "payload": {"type": "task_started", "turn_id": "u1", "model_context_window": 258400}}
+{"timestamp": "2026-10-22T04:00:01.000Z", "type": "response_item", "payload": {"type": "function_call", "name": "shell", "arguments": "{\"command\": [\"bash\", \"-lc\", \"ls\"]}", "call_id": "c1"}}
+{"timestamp": "2026-10-22T04:00:02.000Z", "type": "response_item", "payload": {"type": "function_call_output", "call_id": "c1", "output": "a\nb"}}
+{"timestamp": "2026-10-22T04:00:03.000Z", "type": "response_item", "payload": {"type": "custom_tool_call", "name": "exec", "input": "text(await tools.exec_command({cmd:\"git status\",max_output_tokens:1000}));", "call_id": "c2"}}
+{"timestamp": "2026-10-22T04:00:04.000Z", "type": "response_item", "payload": {"type": "custom_tool_call_output", "call_id": "c2", "output": [{"type": "input_text", "text": "Script completed"}, {"type": "input_text", "text": "clean"}]}}
+{"timestamp": "2026-10-22T04:00:05.000Z", "type": "response_item", "payload": {"type": "custom_tool_call", "name": "apply_patch", "input": "*** Begin Patch\n*** Update File: src/x.py\n@@\n-old\n+new\n+more\n*** End Patch", "call_id": "c3"}}
+{"timestamp": "2026-10-22T04:00:06.000Z", "type": "response_item", "payload": {"type": "custom_tool_call_output", "call_id": "c3", "output": "Success"}}
+{"timestamp": "2026-10-22T04:00:07.000Z", "type": "event_msg", "payload": {"type": "token_count", "info": {"total_token_usage": {"input_tokens": 19329, "cached_input_tokens": 12032, "cache_write_input_tokens": 0, "output_tokens": 101, "reasoning_output_tokens": 5, "total_tokens": 19430}, "last_token_usage": {"input_tokens": 9000, "cached_input_tokens": 8000, "output_tokens": 60}, "model_context_window": 258400}}}
+{"timestamp": "2026-10-22T04:00:08.000Z", "type": "event_msg", "payload": {"type": "task_complete", "turn_id": "u1", "duration_ms": 11544}}
