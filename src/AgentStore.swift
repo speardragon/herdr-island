@@ -13,6 +13,8 @@ final class AgentStore: ObservableObject {
 
     /// Fired when a pane newly enters blocked or done, so the UI can expand.
     let newAttention = PassthroughSubject<Attention, Never>()
+    /// Fired after jumping to an agent's pane: the user is heading to the terminal, so the island can close.
+    let didFocus = PassthroughSubject<Agent, Never>()
 
     private let client: HerdrClient
     private var since: [String: Date] = [:]
@@ -359,6 +361,7 @@ final class AgentStore: ObservableObject {
             guard case .success = result else { return }
             TerminalActivator.activateHost()
             if agent.status == .done { self?.dismiss(agent) }
+            self?.didFocus.send(agent)
         }
     }
 

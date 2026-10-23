@@ -29,6 +29,12 @@ final class AppController: NSObject {
         store.newAttention
             .sink { [weak self] item in self?.announce(item) }
             .store(in: &cancellables)
+        // "Go to terminal" / "Go to tab": the job is done here, so fold the island away
+        // just after the click registers, letting the spring collapse play.
+        store.didFocus
+            .delay(for: .milliseconds(120), scheduler: RunLoop.main)
+            .sink { [weak self] _ in self?.presenters.forEach { $0.close() } }
+            .store(in: &cancellables)
         // Once nothing needs attention (answered, focused or dismissed), close what opened on its own.
         store.objectWillChange
             .debounce(for: .milliseconds(600), scheduler: RunLoop.main)

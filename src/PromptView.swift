@@ -102,7 +102,7 @@ struct PromptView: View {
                 }
             }
             Spacer()
-            PillButton(title: L("Open", "터미널"), systemImage: "arrow.up.forward.app") { store.focus(agent) }
+            PillButton(title: L("Go to terminal", "터미널로 이동"), systemImage: "arrow.up.forward.app") { store.focus(agent) }
             PillButton(title: "Esc", systemImage: "xmark") { store.cancel(agent) }
         }
         .disabled(busy)

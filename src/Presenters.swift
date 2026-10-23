@@ -214,10 +214,19 @@ final class MenuBarPresenter: IslandPresenter {
         window.onVisibilityChange = { [weak self, weak window] visible in
             guard let self = self, let window = window else { return }
             guard visible, let screen = NSScreen.screens.first(where: { $0.displayID == id }) else {
-                window.panel.orderOut(nil)
+                // Fade out rather than vanish; the panel is removed once it is transparent.
+                let panel = window.panel
+                NSAnimationContext.runAnimationGroup({ context in
+                    context.duration = 0.18
+                    panel.animator().alphaValue = 0
+                }, completionHandler: {
+                    if !window.state.expanded { panel.orderOut(nil) }
+                    panel.alphaValue = 1
+                })
                 if !visible { self.onClosed?() }
                 return
             }
+            window.panel.alphaValue = 1
             window.place(self.frame(on: screen, contentWidth: window.state.contentWidth), visible: true)
         }
         // Opening the detail or the stage changes the width; re-place once the change has landed.

@@ -79,7 +79,7 @@ struct AttentionCard: View {
             HStack(spacing: 8) {
                 Spacer()
                 PillButton(title: L("Read again", "다시 읽기"), systemImage: "arrow.clockwise") { store.readPrompt(agent.paneId) }
-                PillButton(title: L("Open", "열기"), systemImage: "arrow.up.forward.app", tint: Theme.blocked, filled: true) {
+                PillButton(title: L("Go to terminal", "터미널로 이동"), systemImage: "arrow.up.forward.app", tint: Theme.blocked, filled: true) {
                     store.focus(agent)
                 }
             }
