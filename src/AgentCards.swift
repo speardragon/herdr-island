@@ -16,6 +16,8 @@ struct AttentionCard: View {
                 if let prompt = item.prompt {
                     PromptView(prompt: prompt, agent: agent, store: store)
                         .id(prompt)
+                } else if store.isReadingPrompt(agent.paneId) {
+                    readingPrompt
                 } else {
                     unreadablePrompt
                 }
@@ -38,6 +40,17 @@ struct AttentionCard: View {
                     lineWidth: 1
                 )
         )
+    }
+
+    private var readingPrompt: some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small).scaleEffect(0.7)
+            Text(L("Reading the prompt…", "질문을 읽는 중…"))
+                .font(.system(size: 12.5))
+                .foregroundColor(Theme.secondaryText)
+            Spacer()
+        }
+        .padding(.vertical, 4)
     }
 
     /// The prompt could not be read into buttons: show the bottom of the terminal so the

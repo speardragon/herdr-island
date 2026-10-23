@@ -24,6 +24,13 @@ final class AgentStore: ObservableObject {
     private var lastScreens: [String: String] = [:]
     /// Failed parses per pane; a prompt can still be drawing when the blocked status arrives.
     private var parseRetries: [String: Int] = [:]
+    /// When each pane's prompt last parsed. Right after an answer the screen already shows the
+    /// input box while the status still says blocked for up to ~0.7 s; reads in that gap must
+    /// not replace a good prompt with "couldn't read".
+    private var lastParsedAt: [String: Date] = [:]
+    static let answerGrace: TimeInterval = 2.5
+    /// How long a fresh blocked pane shows "Reading the prompt…" before admitting it can't.
+    static let firstReadGrace: TimeInterval = 2
     private var rereadQueued: Set<String> = []
     private var reconcileTimer: Timer?
 
@@ -117,14 +124,22 @@ final class AgentStore: ObservableObject {
             dismissed[agent.paneId] = nil
             if agent.status != .blocked { prompts[agent.paneId] = nil }
             parseRetries[agent.paneId] = nil
+            lastParsedAt[agent.paneId] = nil
+            if agent.status == .blocked {
+                // Redraw once the first-read grace ends, so a "Reading…" card can turn into the fallback.
+                DispatchQueue.main.asyncAfter(deadline: .now() + Self.firstReadGrace + 0.05) { [weak self] in
+                    self?.objectWillChange.send()
+                }
+            }
         }
         if agent.status == .blocked && (statusChanged || previous?.revision != agent.revision) {
             readPrompt(agent.paneId)
         }
         guard statusChanged, previous != nil, agent.status.needsAttention else { return }
-        if agent.status == .done && agent.focused && TerminalActivator.isHostFrontmost() {
-            // Already looking at it; nothing to announce.
-            dismissed[agent.paneId] = .done
+        if agent.focused && TerminalActivator.isHostFrontmost() {
+            // You are looking at this pane in the terminal already: don't pop the island over it.
+            // A finished agent you are looking at is also hidden; a blocked one stays listed.
+            if agent.status == .done { dismissed[agent.paneId] = .done }
             return
         }
         newAttention.send(makeAttention(agent))
@@ -191,13 +206,19 @@ final class AgentStore: ObservableObject {
                 let text = read["text"] as? String ?? ""
                 self.lastScreens[paneId] = text
                 let parsed = PromptParser.parse(text)
-                // Unchanged screens would only redraw the island.
-                if parsed != self.prompts[paneId] { self.prompts[paneId] = parsed }
-                if parsed == nil {
-                    self.scheduleRetry(paneId)
-                    Self.saveUnparsed(text, pane: paneId)
-                } else {
+                if let parsed = parsed {
+                    self.lastParsedAt[paneId] = Date()
                     self.parseRetries[paneId] = nil
+                    // Unchanged screens would only redraw the island.
+                    if parsed != self.prompts[paneId] { self.prompts[paneId] = parsed }
+                } else {
+                    let justAnswered = self.lastParsedAt[paneId].map { Date().timeIntervalSince($0) < Self.answerGrace } ?? false
+                    // Keep showing the last good prompt through an answer; the status change removes the card.
+                    if !justAnswered {
+                        self.prompts[paneId] = nil
+                        Self.saveUnparsed(text, pane: paneId)
+                    }
+                    self.scheduleRetry(paneId)
                 }
             }
             if self.rereadQueued.remove(paneId) != nil { self.readPrompt(paneId) }
@@ -208,6 +229,12 @@ final class AgentStore: ObservableObject {
     /// so while the island is open the blocked screens are simply read again.
     func refreshBlockedPrompts() {
         for agent in agents.values where agent.status == .blocked { readPrompt(agent.paneId) }
+    }
+
+    /// Blocked, nothing parsed yet, and still inside the first-read grace: show "Reading…", not a failure.
+    func isReadingPrompt(_ paneId: String) -> Bool {
+        guard agents[paneId]?.status == .blocked, prompts[paneId] == nil, let since = since[paneId] else { return false }
+        return Date().timeIntervalSince(since) < Self.firstReadGrace
     }
 
     /// The bottom of the last screen read, shown when the prompt could not be parsed.
