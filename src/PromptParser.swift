@@ -85,7 +85,12 @@ enum AnswerKeys {
 }
 
 enum PromptParser {
+    /// Tries each side of a side-panel divider, then the whole screen.
     static func parse(_ screen: String) -> ParsedPrompt? {
+        (ScreenRegions.sides(screen) + [screen]).lazy.compactMap(parseRegion).first
+    }
+
+    private static func parseRegion(_ screen: String) -> ParsedPrompt? {
         let lines = screen.components(separatedBy: "\n").map(trimTrailing)
         guard let last = lastOptionIndex(lines),
               let options = collectOptions(lines, endingAt: last),

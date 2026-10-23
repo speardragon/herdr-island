@@ -242,7 +242,7 @@ final class AgentStore: ObservableObject {
     /// The bottom of the last screen read, shown when the prompt could not be parsed.
     func screenTail(_ paneId: String, lines count: Int = 14) -> String? {
         guard let screen = lastScreens[paneId] else { return nil }
-        let lines = screen.components(separatedBy: "\n").map { $0.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression) }
+        let lines = ScreenRegions.agentSide(screen).components(separatedBy: "\n").map { $0.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression) }
         return lines.filter { !$0.isEmpty }.suffix(count).joined(separator: "\n")
     }
 
