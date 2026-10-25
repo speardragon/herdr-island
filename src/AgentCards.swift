@@ -87,11 +87,22 @@ struct AttentionCard: View {
     }
 
     private var doneActions: some View {
-        HStack(spacing: 8) {
-            PillButton(title: L("Go to tab", "탭으로 이동"), systemImage: "arrow.up.forward.app", tint: Theme.done, filled: true) {
-                store.focus(agent)
+        VStack(alignment: .leading, spacing: 10) {
+            // A recap is a reminder of where the session stands, not a new result.
+            if agent.status == .recap, let recap = store.recaps[agent.paneId], !recap.isEmpty {
+                Text(recap)
+                    .font(.system(size: 12.5))
+                    .foregroundColor(Theme.secondaryText)
+                    .lineLimit(4)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            Spacer()
+            HStack(spacing: 8) {
+                PillButton(title: L("Go to tab", "탭으로 이동"), systemImage: "arrow.up.forward.app",
+                           tint: Theme.color(for: agent.status), filled: true) {
+                    store.focus(agent)
+                }
+                Spacer()
+            }
         }
     }
 }

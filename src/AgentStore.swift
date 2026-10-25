@@ -10,6 +10,8 @@ final class AgentStore: ObservableObject {
     @Published private(set) var prompts: [String: ParsedPrompt] = [:]
     @Published private(set) var connected = false
     @Published private(set) var busy: Set<String> = []
+    /// Recap text for panes whose done is only Claude Code's recap, shown on their card.
+    @Published private(set) var recaps: [String: String] = [:]
 
     /// Fired when a pane newly enters blocked or done, so the UI can expand.
     let newAttention = PassthroughSubject<Attention, Never>()
@@ -33,6 +35,8 @@ final class AgentStore: ObservableObject {
     static let answerGrace: TimeInterval = 2.5
     /// How long a fresh blocked pane shows "Reading the prompt…" before admitting it can't.
     static let firstReadGrace: TimeInterval = 2
+    /// When a done that did not look like a recap is read once more.
+    static let recapRecheck: TimeInterval = 1.2
     private var rereadQueued: Set<String> = []
     private var reconcileTimer: Timer?
 
@@ -119,8 +123,9 @@ final class AgentStore: ObservableObject {
 
     private func upsert(_ agent: Agent) {
         let previous = agents[agent.paneId]
-        agents[agent.paneId] = agent
-        let statusChanged = previous?.status != agent.status
+        let statusChanged = previous?.status.reported != agent.status
+        if statusChanged { recaps[agent.paneId] = nil }
+        agents[agent.paneId] = recaps[agent.paneId] == nil ? agent : agent.with(status: .recap)
         if statusChanged {
             since[agent.paneId] = Date()
             dismissed[agent.paneId] = nil
@@ -137,18 +142,54 @@ final class AgentStore: ObservableObject {
         if agent.status == .blocked && (statusChanged || previous?.revision != agent.revision) {
             readPrompt(agent.paneId)
         }
-        guard statusChanged, previous != nil, agent.status.needsAttention else { return }
+        guard statusChanged, agent.status.needsAttention else { return }
+        let isNew = previous != nil
+        if agent.status == .done && agent.kind == "claude" {
+            // Tell a recap from a finished task before announcing it, so the alert has the right color.
+            detectRecap(agent) { [weak self] in if isNew { self?.announce(agent.paneId) } }
+        } else if isNew {
+            announce(agent.paneId)
+        }
+    }
+
+    private func announce(_ paneId: String) {
+        guard let agent = agents[paneId], agent.status.needsAttention else { return }
         if agent.focused && TerminalActivator.isHostFrontmost() {
             // You are looking at this pane in the terminal already: don't pop the island over it.
             // A finished agent you are looking at is also hidden; a blocked one stays listed.
-            if agent.status == .done { dismissed[agent.paneId] = .done }
+            if agent.status != .blocked { dismissed[paneId] = agent.status }
             return
         }
         newAttention.send(makeAttention(agent))
     }
 
+    /// Reads the end of the transcript off the main thread; a recap turns the pane's done into `.recap`.
+    /// The recap line can land just after the screen shows it, so a miss is checked once more
+    /// (after the alert, which then only changes color).
+    private func detectRecap(_ agent: Agent, retry: Bool = true, then finish: @escaping () -> Void) {
+        let episode = since[agent.paneId]
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            let summary = SessionLocator.claude(agent.sessionId ?? "").flatMap { RecapDetector.summary(atEndOf: $0) }
+            DispatchQueue.main.async {
+                // A newer status replaced this done while the file was read.
+                guard let self = self, self.since[agent.paneId] == episode,
+                      let current = self.agents[agent.paneId], current.status == .done else { return }
+                if let summary = summary {
+                    self.recaps[agent.paneId] = summary
+                    self.agents[agent.paneId] = current.with(status: .recap)
+                } else if retry {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + Self.recapRecheck) { [weak self] in
+                        self?.detectRecap(agent, retry: false) {}
+                    }
+                }
+                finish()
+            }
+        }
+    }
+
     private func remove(_ paneId: String) {
         agents[paneId] = nil
+        recaps[paneId] = nil
         prompts[paneId] = nil
         since[paneId] = nil
         dismissed[paneId] = nil
@@ -265,10 +306,11 @@ final class AgentStore: ObservableObject {
     }
 
     /// Fills the store with a fake agent and prompt, for `--snapshot` previews only.
-    func loadPreview(_ agent: Agent, prompt: ParsedPrompt?, since date: Date = Date()) {
+    func loadPreview(_ agent: Agent, prompt: ParsedPrompt?, recap: String? = nil, since date: Date = Date()) {
         agents[agent.paneId] = agent
         since[agent.paneId] = date
         prompts[agent.paneId] = prompt
+        recaps[agent.paneId] = recap
         connected = true
     }
 
@@ -360,7 +402,7 @@ final class AgentStore: ObservableObject {
         client.callAsync("agent.focus", ["target": agent.paneId]) { [weak self] result in
             guard case .success = result else { return }
             TerminalActivator.activateHost()
-            if agent.status == .done { self?.dismiss(agent) }
+            if agent.status.reported == .done { self?.dismiss(agent) }
             self?.didFocus.send(agent)
         }
     }

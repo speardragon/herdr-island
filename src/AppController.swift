@@ -131,7 +131,8 @@ final class AppController: NSObject {
     }
 
     private func apply(old: Config, new: Config) {
-        if old.glowBlockedColor != new.glowBlockedColor || old.glowDoneColor != new.glowDoneColor {
+        if old.glowBlockedColor != new.glowBlockedColor || old.glowDoneColor != new.glowDoneColor
+            || old.glowRecapColor != new.glowRecapColor {
             Theme.apply(new)
             // Status colors are read while drawing; rebuild the islands so every view redraws.
             applyMode()

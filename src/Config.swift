@@ -14,7 +14,7 @@ import Foundation
 //              close_on_leave = true, leave_delay_seconds = 0.5, close_on_click_outside = true
 //              close_when_clear = true   close a self-opened island once nothing needs attention
 //              blocked_sound = "none" | macOS sound name, done_sound = "none"
-//   [glow]     enabled = true, blocked_color = "FF453A", done_color = "30D158", intensity = 0.6 (0.1–1)
+//   [glow]     enabled = true, blocked_color = "FF453A", done_color = "30D158", recap_color = "BF5AF2", intensity = 0.6 (0.1–1)
 
 enum DisplayMode: String, CaseIterable {
     case auto, notch, menubar, both
@@ -67,6 +67,7 @@ struct Config: Equatable {
     var glowEnabled = true
     var glowBlockedColor = "FF453A"
     var glowDoneColor = "30D158"
+    var glowRecapColor = "BF5AF2"
     var glowIntensity: Double = 0.6
     var blockedSound = "none"
     var doneSound = "none"
@@ -121,6 +122,7 @@ struct Config: Equatable {
         c.glowEnabled = bool("glow.enabled", defaults.glowEnabled)
         c.glowBlockedColor = values["glow.blocked_color"].flatMap(hexColor) ?? defaults.glowBlockedColor
         c.glowDoneColor = values["glow.done_color"].flatMap(hexColor) ?? defaults.glowDoneColor
+        c.glowRecapColor = values["glow.recap_color"].flatMap(hexColor) ?? defaults.glowRecapColor
         c.glowIntensity = number("glow.intensity").map { min(max($0, 0.1), 1) } ?? defaults.glowIntensity
         c.expandOnBlocked = bool("behavior.expand_on_blocked", defaults.expandOnBlocked)
         c.expandOnDone = bool("behavior.expand_on_done", defaults.expandOnDone)
@@ -196,6 +198,7 @@ struct Config: Equatable {
             ("glow", "enabled", String(config.glowEnabled)),
             ("glow", "blocked_color", quoted(config.glowBlockedColor)),
             ("glow", "done_color", quoted(config.glowDoneColor)),
+            ("glow", "recap_color", quoted(config.glowRecapColor)),
             ("glow", "intensity", number(config.glowIntensity)),
             ("behavior", "blocked_sound", quoted(config.blockedSound)),
             ("behavior", "done_sound", quoted(config.doneSound)),

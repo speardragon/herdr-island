@@ -277,13 +277,16 @@ final class MenuBarPresenter: IslandPresenter {
         let attention = store.attention
         let blocked = attention.filter { $0.agent.status == .blocked }.count
         let done = attention.count - blocked
-        let symbol = blocked > 0 ? "exclamationmark.bubble.fill" : done > 0 ? "checkmark.bubble.fill" : "bubble.left.and.bubble.right"
+        let onlyRecaps = done > 0 && !attention.contains { $0.agent.status == .done }
+        let symbol = blocked > 0 ? "exclamationmark.bubble.fill" : onlyRecaps ? "text.bubble.fill"
+            : done > 0 ? "checkmark.bubble.fill" : "bubble.left.and.bubble.right"
         let image = NSImage(systemSymbolName: symbol, accessibilityDescription: "herdr")
         image?.isTemplate = blocked == 0 && done == 0
         button.image = image
         let count = blocked > 0 ? blocked : done
         button.title = count > 0 ? " \(count)" : ""
-        button.contentTintColor = blocked > 0 ? NSColor(Theme.blocked) : done > 0 ? NSColor(Theme.done) : nil
+        button.contentTintColor = blocked > 0 ? NSColor(Theme.blocked) : onlyRecaps ? NSColor(Theme.recap)
+            : done > 0 ? NSColor(Theme.done) : nil
         button.toolTip = AppInfo.name
     }
 }

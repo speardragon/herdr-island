@@ -14,6 +14,7 @@ enum Theme {
     // Follow the edge-light colors so dots, labels and the glow always agree.
     private(set) static var blocked = Color(hex: Config().glowBlockedColor)
     private(set) static var done = Color(hex: Config().glowDoneColor)
+    private(set) static var recap = Color(hex: Config().glowRecapColor)
     static let working = Color(red: 0.04, green: 0.52, blue: 1.0)
     static let idle = Color(red: 0.56, green: 0.56, blue: 0.58)
     static let danger = Color(red: 1.0, green: 0.27, blue: 0.23)
@@ -39,12 +40,14 @@ enum Theme {
     static func apply(_ config: Config) {
         blocked = Color(hex: config.glowBlockedColor)
         done = Color(hex: config.glowDoneColor)
+        recap = Color(hex: config.glowRecapColor)
     }
 
     static func color(for status: AgentStatus) -> Color {
         switch status {
         case .blocked: return blocked
         case .done: return done
+        case .recap: return recap
         case .working: return working
         case .idle, .unknown: return idle
         }
@@ -54,6 +57,7 @@ enum Theme {
         switch status {
         case .blocked: return L("Needs you", "응답 필요")
         case .done: return L("Done", "완료")
+        case .recap: return L("Recap", "요약")
         case .working: return L("Working", "작업 중")
         case .idle: return L("Idle", "대기")
         case .unknown: return L("Unknown", "알 수 없음")

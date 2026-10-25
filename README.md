@@ -56,8 +56,9 @@ and you never leave the app you're working in. Prefer clicking? Turn hover off i
 <img src="docs/images/en/collapsed.png" alt="The closed notch with the Claude mark and a red dot beside it, its edge glowing red" width="860">
 
 The closed island shows the leading agent's mark and a status dot beside the notch. Its edge breathes
-**red** while an agent waits for you and **green** when one has finished. New events open it for a moment;
-hover or click the notch to open it any time.
+**red** while an agent waits for you and **green** when one has finished. When Claude Code only printed a
+recap of an idle session, it glows **purple** and the card shows the recap, so you can tell it from finished work.
+New events open it for a moment; hover or click the notch to open it any time.
 
 ### Session details: tokens, cache, tools, files
 
@@ -227,6 +228,7 @@ done_sound = "none"
 enabled = true             # edge light
 blocked_color = "FF453A"
 done_color = "30D158"
+recap_color = "BF5AF2"     # done only because Claude Code printed a recap
 intensity = 0.6            # 0.1 – 1
 ```
 

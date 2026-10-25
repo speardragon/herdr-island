@@ -105,13 +105,14 @@ struct IslandView: View {
         self.settings = state.settings
     }
 
-    /// Red while anything is blocked, green while something is done; nil when there is nothing to show.
+    /// Red while anything is blocked, green while something is done, purple for recaps only; nil otherwise.
     private var glowColor: Color? {
         let config = settings.config
         guard config.glowEnabled else { return nil }
         let statuses = store.attention.map(\.agent.status)
         if statuses.contains(.blocked) { return Color(hex: config.glowBlockedColor) }
         if statuses.contains(.done) { return Color(hex: config.glowDoneColor) }
+        if statuses.contains(.recap) { return Color(hex: config.glowRecapColor) }
         return nil
     }
 
@@ -198,6 +199,7 @@ struct CollapsedContent: View {
     private var lead: Agent? { store.attention.first?.agent ?? store.working.first }
     private var blockedCount: Int { store.attention.filter { $0.agent.status == .blocked }.count }
     private var doneCount: Int { store.attention.filter { $0.agent.status == .done }.count }
+    private var recapCount: Int { store.attention.filter { $0.agent.status == .recap }.count }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -232,6 +234,13 @@ struct CollapsedContent: View {
                     .font(.system(size: 11, weight: .heavy))
                     .foregroundColor(Theme.done)
                 if doneCount > 1 { count(doneCount, Theme.done) }
+            }
+        } else if recapCount > 0 {
+            HStack(spacing: 3) {
+                Image(systemName: "text.bubble.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(Theme.recap)
+                if recapCount > 1 { count(recapCount, Theme.recap) }
             }
         } else {
             HStack(spacing: 4) {
@@ -335,10 +344,12 @@ struct ExpandedContent: View {
     private var summary: some View {
         let blocked = store.attention.filter { $0.agent.status == .blocked }.count
         let done = store.attention.filter { $0.agent.status == .done }.count
+        let recaps = store.attention.filter { $0.agent.status == .recap }.count
         let working = store.working.count
         return HStack(spacing: 8) {
             if blocked > 0 { chip(blocked, .blocked) }
             if done > 0 { chip(done, .done) }
+            if recaps > 0 { chip(recaps, .recap) }
             if working > 0 { chip(working, .working) }
         }
     }

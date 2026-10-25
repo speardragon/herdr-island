@@ -205,6 +205,7 @@ struct NotificationsPane: View {
                 Group {
                     HexColorRow(title: L("Needs you", "응답 필요"), hex: $settings.config.glowBlockedColor, fallback: Config().glowBlockedColor)
                     HexColorRow(title: L("Done", "완료"), hex: $settings.config.glowDoneColor, fallback: Config().glowDoneColor)
+                    HexColorRow(title: L("Recap only", "요약만 뜸"), hex: $settings.config.glowRecapColor, fallback: Config().glowRecapColor)
                     LabeledContent(L("Strength", "세기")) {
                         HStack(spacing: 10) {
                             Slider(value: Binding(get: { settings.config.glowIntensity },

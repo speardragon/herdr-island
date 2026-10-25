@@ -60,6 +60,22 @@ enum Snapshot {
             render(IslandView(store: store, state: state), size: NSSize(width: 620, height: 900),
                    to: directory.appendingPathComponent("preview-\(name).png"))
         }
+        renderRecapPreview(into: directory)
+    }
+
+    /// A done that is only Claude Code's recap: purple, with the recap on the card.
+    private static func renderRecapPreview(into directory: URL) {
+        guard let agent = Agent(json: ["pane_id": "preview:recap", "agent": "claude", "agent_status": "recap",
+                                       "workspace_id": "preview", "terminal_title": "notch-island", "cwd": "/tmp/preview"]) else { return }
+        let store = AgentStore(client: HerdrClient())
+        store.loadPreview(agent, prompt: nil, recap: L("Shipping the side-panel parser fix; next, decide whether to tag 0.7.3.",
+                                                       "옆 패널 파서 수정을 올렸고, 다음으로 0.7.3 태그를 만들지 정하면 돼요."))
+        for (name, expanded) in [("preview-recap", true), ("preview-recap-collapsed", false)] {
+            let state = IslandState(style: .notch(width: 185, height: 32), settings: SettingsModel(config: Config()), onOpenSettings: {})
+            state.expanded = expanded
+            render(IslandView(store: store, state: state), size: NSSize(width: 620, height: expanded ? 400 : 120),
+                   to: directory.appendingPathComponent("\(name).png"))
+        }
     }
 
     /// Opens the detail pane for this herdr pane's own agent (or the first agent).

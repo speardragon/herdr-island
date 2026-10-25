@@ -2,8 +2,12 @@ import Foundation
 
 enum AgentStatus: String {
     case idle, working, blocked, done, unknown
+    /// Done only because Claude Code printed a recap; herdr itself never reports this.
+    case recap
 
-    var needsAttention: Bool { self == .blocked || self == .done }
+    var needsAttention: Bool { self == .blocked || self == .done || self == .recap }
+    /// What herdr reported, with the island's own recap folded back into done.
+    var reported: AgentStatus { self == .recap ? .done : self }
 }
 
 /// One herdr pane that runs a detected agent, decoded from `agent.list` / `pane.updated`.
@@ -24,6 +28,11 @@ struct Agent: Identifiable, Equatable {
 
     var id: String { paneId }
 
+    func with(status: AgentStatus) -> Agent {
+        Agent(paneId: paneId, workspaceId: workspaceId, tabId: tabId, kind: kind, name: name, status: status,
+              title: title, cwd: cwd, focused: focused, revision: revision, stateChangeSeq: stateChangeSeq, sessionId: sessionId)
+    }
+
     var displayName: String {
         if let name = name, !name.isEmpty { return name }
         return Agent.providerName(kind)
@@ -40,6 +49,22 @@ struct Agent: Identifiable, Equatable {
             "pi": "Pi", "mastracode": "Mastra", "droid": "Droid", "hermes": "Hermes",
         ]
         return names[kind] ?? kind.prefix(1).uppercased() + kind.dropFirst()
+    }
+
+    init(paneId: String, workspaceId: String, tabId: String, kind: String, name: String?, status: AgentStatus,
+         title: String, cwd: String, focused: Bool, revision: Int, stateChangeSeq: Int, sessionId: String?) {
+        self.paneId = paneId
+        self.workspaceId = workspaceId
+        self.tabId = tabId
+        self.kind = kind
+        self.name = name
+        self.status = status
+        self.title = title
+        self.cwd = cwd
+        self.focused = focused
+        self.revision = revision
+        self.stateChangeSeq = stateChangeSeq
+        self.sessionId = sessionId
     }
 
     /// Accepts both an agent-list entry and the `pane` object of a `pane.updated` event.
