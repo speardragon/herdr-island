@@ -30,6 +30,25 @@ struct ShellStage: View {
     let large: Bool
 
     private var command: String { call.fields["command"] ?? call.fields["cmd"] ?? call.summary }
+    private var fontSize: CGFloat { large ? 12.5 : 11.5 }
+
+    /// Tokenized once for the whole command, then cut to what is typed so far.
+    private var highlighted: AttributedString {
+        HighlightStyle.attributed(ShellHighlight.tokens(command), size: fontSize)
+    }
+
+    private var prompt: AttributedString {
+        var text = AttributedString("$ ")
+        text.foregroundColor = Theme.done
+        text.font = .system(size: fontSize, design: .monospaced)
+        return text
+    }
+
+    private func caret(_ visible: Bool) -> AttributedString {
+        var text = AttributedString(visible ? "▍" : "")
+        text.foregroundColor = Theme.primaryText.opacity(0.7)
+        return text
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -51,8 +70,8 @@ struct ShellStage: View {
                 ScrollCanvas {
                     VStack(alignment: .leading, spacing: 6) {
                         TypingText(text: command, key: call.id) { typed, typing in
-                            (Text("$ ").foregroundColor(Theme.done) + Text(typed).foregroundColor(Theme.primaryText)
-                                + Text(typing || call.finishedAt == nil ? "▍" : "").foregroundColor(Theme.primaryText.opacity(0.7)))
+                            Text(prompt + HighlightStyle.prefix(highlighted, typed.count)
+                                 + caret(typing || call.finishedAt == nil))
                         }
                         if let output = call.result.map(Self.unwrapCodexOutput) {
                             Text(output.isEmpty ? L("(no output)", "(출력 없음)") : output)
@@ -60,7 +79,7 @@ struct ShellStage: View {
                         }
                         Color.clear.frame(height: 1).id("end")
                     }
-                    .font(.system(size: large ? 12.5 : 11.5, design: .monospaced))
+                    .font(.system(size: fontSize, design: .monospaced))
                     .fixedSize(horizontal: true, vertical: true)
                     .textSelection(.enabled)
                     .padding(12)
@@ -389,30 +408,6 @@ struct MessageStage: View {
             } else {
                 Spacer()
             }
-        }
-    }
-}
-
-struct GenericStage: View {
-    let call: ToolCall
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 10) {
-                Image(systemName: call.kind.symbol)
-                    .font(.system(size: 13, weight: .semibold))
-                    .frame(width: 30, height: 30)
-                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.white.opacity(0.08)))
-                Text(call.name).font(.system(size: 14, weight: .semibold))
-                Spacer()
-                ElapsedText(since: call.startedAt, until: call.finishedAt)
-            }
-            .foregroundColor(Theme.primaryText)
-            CodeBlock(title: L("Input", "입력"), text: call.input, maxHeight: 220)
-            if let result = call.result {
-                CodeBlock(title: call.isError ? L("Error", "오류") : L("Result", "결과"), text: result, isError: call.isError, maxHeight: 260)
-            }
-            Spacer(minLength: 0)
         }
     }
 }

@@ -128,10 +128,11 @@ struct ClaudeTranscriptParser: TranscriptParser {
         let input = block["input"] as? JSON ?? [:]
         let (kind, summary) = Self.describe(name, input)
         var call = ToolCall(id: id, name: name, kind: kind, summary: summary,
-                            input: Truncate.text(prettyJSON(input), limit: Truncate.resultLimit),
+                            input: Truncate.text(prettyJSON(input), limit: kind == .mcp ? Truncate.contentLimit : Truncate.resultLimit),
                             startedAt: date, isSubagent: subagent)
         call.fields = Self.fields(input)
         call.todos = Self.todos(input)
+        call.questions = Self.questions(input)
         if kind == .read { call.readRange = ReadRange.from(input: call.fields, result: nil) }
         toolIndex[id] = detail.toolCalls.count
         detail.toolCalls.append(call)
@@ -140,7 +141,10 @@ struct ClaudeTranscriptParser: TranscriptParser {
 
     private mutating func toolResult(_ block: JSON, extra: JSON?, at date: Date?) {
         guard let id = block["tool_use_id"] as? String, let index = toolIndex[id] else { return }
-        detail.toolCalls[index].result = resultText(block["content"]).map { Truncate.text($0, limit: Truncate.resultLimit) }
+        // MCP results are often long JSON documents; keep enough of them to read.
+        let limit = detail.toolCalls[index].kind == .mcp ? Truncate.contentLimit : Truncate.resultLimit
+        detail.toolCalls[index].result = resultText(block["content"]).map { Truncate.text($0, limit: limit) }
+        detail.toolCalls[index].resultImages = (block["content"] as? [JSON])?.filter { $0["type"] as? String == "image" }.count ?? 0
         detail.toolCalls[index].isError = block["is_error"] as? Bool ?? false
         detail.toolCalls[index].finishedAt = date
         if let file = extra?["file"] as? JSON, file["startLine"] != nil {
@@ -148,6 +152,15 @@ struct ClaudeTranscriptParser: TranscriptParser {
             detail.toolCalls[index].excerpt = (file["content"] as? String).map { Truncate.text($0, limit: Truncate.contentLimit) }
         }
         if let patch = extra?["structuredPatch"] { detail.toolCalls[index].patch = PatchHunk.parse(patch) }
+        if let answers = extra?["answers"] as? JSON {
+            let notes = extra?["annotations"] as? JSON ?? [:]
+            detail.toolCalls[index].questions = detail.toolCalls[index].questions.map { question in
+                var answered = question
+                answered.answer = answers[question.text] as? String
+                answered.notes = (notes[question.text] as? JSON)?["notes"] as? String
+                return answered
+            }
+        }
         // A Read result carries the file text; keep it so later edits can be shown in place.
         if let file = extra?["file"] as? JSON, let path = file["filePath"] as? String, let text = file["content"] as? String {
             detail.file(path, at: date) { $0.content = Truncate.text(text, limit: Truncate.contentLimit) }
@@ -200,6 +213,19 @@ struct ClaudeTranscriptParser: TranscriptParser {
         }
     }
 
+    static func questions(_ input: JSON) -> [AskedQuestion] {
+        (input["questions"] as? [JSON] ?? []).compactMap { question in
+            guard let text = question["question"] as? String else { return nil }
+            let options = (question["options"] as? [JSON] ?? []).compactMap { option -> AskedQuestion.Option? in
+                guard let label = option["label"] as? String else { return nil }
+                return AskedQuestion.Option(label: label, detail: option["description"] as? String,
+                                            preview: (option["preview"] as? String).map { Truncate.text($0, limit: Truncate.resultLimit) })
+            }
+            return AskedQuestion(header: question["header"] as? String, text: text, options: options,
+                                 multiSelect: question["multiSelect"] as? Bool ?? false)
+        }
+    }
+
     static func todos(_ input: JSON) -> [TodoItem] {
         (input["todos"] as? [JSON] ?? []).compactMap { todo in
             guard let content = todo["content"] as? String else { return nil }
@@ -239,7 +265,7 @@ struct ClaudeTranscriptParser: TranscriptParser {
             return (.question, first ?? name)
         default:
             let value = input.keys.sorted().lazy.compactMap { input[$0] as? String }.first
-            return (.other, value.map(firstLine) ?? name)
+            return (name.hasPrefix("mcp__") ? .mcp : .other, value.map(firstLine) ?? name)
         }
     }
 }

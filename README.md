@@ -98,12 +98,14 @@ For a working agent, details open on the **Live** view: the current step, drawn 
 | **Read** | The whole file, with the lines being read lit up and scrolled into view. Markdown renders as a document. |
 | **Write** | An editor with the new file typing itself in. |
 | **Edit** | A diff with real line numbers; added lines type in. |
-| **Bash** | A terminal: the command, elapsed time, output and failures |
+| **Bash** | A terminal: the command with quiet highlighting, elapsed time, output and failures |
 | **Grep / Glob** | A search field and the hits, with matches highlighted |
 | **WebFetch / WebSearch** | A browser: address bar, loading bar, the result |
 | **Task** | A subagent card with its steps as they happen |
 | **TodoWrite** | A checklist with progress |
+| **AskUserQuestion** | Each question with its options; once answered, the picks light up, with any typed answer and notes |
 | **Skill** | A skill badge |
+| **MCP tools** | The server and tool, the arguments as key/value rows, and the result filling the stage with JSON pretty-printed |
 
 ### No notch? Use the menu bar
 

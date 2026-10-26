@@ -16,6 +16,7 @@ extension ToolKind {
         case .question: return "questionmark.bubble"
         case .todo: return "checklist"
         case .skill: return "sparkles"
+        case .mcp: return "puzzlepiece.extension"
         case .other: return "wrench.and.screwdriver"
         }
     }

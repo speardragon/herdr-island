@@ -28,7 +28,7 @@ struct TokenUsage: Equatable {
 }
 
 enum ToolKind: Equatable {
-    case read, write, edit, shell, search, web, agent, question, todo, skill, other
+    case read, write, edit, shell, search, web, agent, question, todo, skill, mcp, other
 }
 
 struct TodoItem: Equatable {
@@ -36,6 +36,23 @@ struct TodoItem: Equatable {
     let content: String
     let status: Status
     let activeForm: String?
+}
+
+/// One AskUserQuestion question. The answer is the string Claude Code reports: the picked
+/// label, labels joined by ", " for multi-select, or text the user typed.
+struct AskedQuestion: Equatable {
+    struct Option: Equatable {
+        let label: String
+        let detail: String?
+        let preview: String?
+    }
+
+    let header: String?
+    let text: String
+    let options: [Option]
+    let multiSelect: Bool
+    var answer: String?
+    var notes: String?
 }
 
 struct ToolCall: Identifiable, Equatable {
@@ -46,6 +63,8 @@ struct ToolCall: Identifiable, Equatable {
     let summary: String
     let input: String
     var result: String?
+    /// Image blocks in the result (screenshots), which are not kept.
+    var resultImages = 0
     var isError = false
     let startedAt: Date?
     var finishedAt: Date?
@@ -58,6 +77,8 @@ struct ToolCall: Identifiable, Equatable {
     var excerpt: String?
     var patch: [PatchHunk] = []
     var todos: [TodoItem] = []
+    /// AskUserQuestion: the questions asked and, once answered, what was picked.
+    var questions: [AskedQuestion] = []
 
     var duration: TimeInterval? {
         guard let start = startedAt, let end = finishedAt else { return nil }

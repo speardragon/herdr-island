@@ -126,7 +126,7 @@ struct LiveStageView: View {
         case .write: WriteStage(call: call, large: large)
         case .edit:
             if call.name == "apply_patch" || call.fields["old_string"] == nil && call.patch.isEmpty {
-                GenericStage(call: call)
+                ToolCallStage(call: call, large: large)
             } else {
                 EditStage(call: call, large: large)
             }
@@ -136,7 +136,9 @@ struct LiveStageView: View {
         case .agent: AgentStage(call: call, subagentCalls: subagentSteps(of: call), large: large)
         case .todo: TodoStage(call: call, large: large)
         case .skill: SkillStage(call: call)
-        case .question, .other: GenericStage(call: call)
+        case .question:
+            if call.questions.isEmpty { ToolCallStage(call: call, large: large) } else { QuestionStage(call: call, large: large) }
+        case .mcp, .other: ToolCallStage(call: call, large: large)
         }
     }
 

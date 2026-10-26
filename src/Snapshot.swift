@@ -61,6 +61,47 @@ enum Snapshot {
                    to: directory.appendingPathComponent("preview-\(name).png"))
         }
         renderRecapPreview(into: directory)
+        renderQuestionPreview(fixtures: fixtures, into: directory)
+        renderToolPreview(fixtures: fixtures, into: directory)
+    }
+
+    /// MCP calls from tests/fixtures and a highlighted shell command, finished and mid-typing.
+    private static func renderToolPreview(fixtures: URL, into directory: URL) {
+        let sizes: [(String, Bool, NSSize)] = [("", false, NSSize(width: 520, height: 520)), ("-large", true, NSSize(width: 1000, height: 640))]
+        if let text = try? String(contentsOf: fixtures.appendingPathComponent("claude-mcp.jsonl"), encoding: .utf8) {
+            var parser = ClaudeTranscriptParser()
+            text.split(separator: "\n").forEach { parser.consume(String($0)) }
+            for (index, call) in parser.detail.toolCalls.enumerated() {
+                for (suffix, large, size) in sizes {
+                    render(ToolCallStage(call: call, large: large).padding(16).background(Color.black), size: size,
+                           to: directory.appendingPathComponent("preview-mcp-\(index + 1)\(suffix).png"))
+                }
+            }
+        }
+        let command = "cd ~/demo && FOO=1 swift build -c release 2>&1 | grep -E \"error|warning\" # quiet\ncat <<'EOF' > notes.txt\nhello | world\nEOF\ngit commit -m \"fix: parse \\\"quoted\\\" names\""
+        let now = Date()
+        let shell = ToolCall(id: "preview-shell", name: "Bash", kind: .shell, summary: "Build and commit", input: "",
+                             result: "Compiling demo\nBuild complete!", startedAt: now.addingTimeInterval(-3), finishedAt: now,
+                             fields: ["command": command, "description": "Build and commit"])
+        for (suffix, large, size) in sizes {
+            render(ShellStage(call: shell, large: large).padding(16).background(Color.black), size: size,
+                   to: directory.appendingPathComponent("preview-shell\(suffix).png"))
+        }
+        render(ShellStage(call: shell, large: false).environment(\.playbackElapsed, 0.12).padding(16).background(Color.black),
+               size: NSSize(width: 520, height: 300), to: directory.appendingPathComponent("preview-shell-typing.png"))
+    }
+
+    /// AskUserQuestion on the live stage: answered, declined and waiting, from tests/fixtures.
+    private static func renderQuestionPreview(fixtures: URL, into directory: URL) {
+        guard let text = try? String(contentsOf: fixtures.appendingPathComponent("claude-question.jsonl"), encoding: .utf8) else { return }
+        var parser = ClaudeTranscriptParser()
+        text.split(separator: "\n").forEach { parser.consume(String($0)) }
+        for (index, call) in parser.detail.toolCalls.enumerated() {
+            for (suffix, large, size) in [("", false, NSSize(width: 520, height: 640)), ("-large", true, NSSize(width: 1000, height: 700))] {
+                render(QuestionStage(call: call, large: large).padding(16).background(Color.black), size: size,
+                       to: directory.appendingPathComponent("preview-question-\(index + 1)\(suffix).png"))
+            }
+        }
     }
 
     /// A done that is only Claude Code's recap: purple, with the recap on the card.

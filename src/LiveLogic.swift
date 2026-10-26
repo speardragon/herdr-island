@@ -154,3 +154,38 @@ enum Typing {
         return max(0, min(total, Int(Double(total) * elapsed / length)))
     }
 }
+
+/// Which options an AskUserQuestion answer picked, and any text typed instead.
+/// Multi-select answers join labels with ", ", and labels may contain ", " themselves,
+/// so runs of tokens are matched back to labels, longest first.
+struct QuestionAnswer: Equatable {
+    let picked: Set<String>
+    let typed: String?
+
+    static func resolve(_ question: AskedQuestion) -> QuestionAnswer {
+        guard let answer = question.answer?.trimmingCharacters(in: .whitespacesAndNewlines), !answer.isEmpty else {
+            return QuestionAnswer(picked: [], typed: nil)
+        }
+        let labels = Set(question.options.map(\.label))
+        if labels.contains(answer) { return QuestionAnswer(picked: [answer], typed: nil) }
+        guard question.multiSelect else { return QuestionAnswer(picked: [], typed: answer) }
+        let tokens = answer.components(separatedBy: ", ")
+        var picked: Set<String> = []
+        var leftover: [String] = []
+        var index = 0
+        while index < tokens.count {
+            let run = (index..<tokens.count).reversed()
+                .map { tokens[index...$0].joined(separator: ", ") }
+                .first { labels.contains($0) }
+            if let label = run {
+                picked.insert(label)
+                index += label.components(separatedBy: ", ").count
+            } else {
+                leftover.append(tokens[index])
+                index += 1
+            }
+        }
+        let typed = leftover.joined(separator: ", ").trimmingCharacters(in: .whitespaces)
+        return QuestionAnswer(picked: picked, typed: typed.isEmpty ? nil : typed)
+    }
+}
