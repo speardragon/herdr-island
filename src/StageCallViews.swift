@@ -42,6 +42,7 @@ enum HighlightStyle {
 struct ToolCallStage: View {
     let call: ToolCall
     let large: Bool
+    @State private var showRaw = false
 
     private var mcp: McpTool? { McpTool(name: call.name) }
     private var arguments: [ToolArguments.Row]? { ToolArguments.rows(call.input) }
@@ -96,9 +97,10 @@ struct ToolCallStage: View {
         .background(Capsule().fill(color.opacity(0.14)))
     }
 
-    private func section<Content: View>(_ title: String, trailing: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+    private func section<Content: View>(_ title: String, trailing: String? = nil, raw: Binding<Bool>? = nil,
+                                        @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
+            HStack(spacing: 8) {
                 Text(title.uppercased())
                     .font(.system(size: 9.5, weight: .bold))
                     .tracking(0.6)
@@ -107,6 +109,7 @@ struct ToolCallStage: View {
                 if let trailing = trailing {
                     Text(trailing).font(.system(size: 10.5).monospacedDigit()).foregroundColor(Theme.tertiaryText)
                 }
+                if let raw = raw { RawToggle(raw: raw) }
             }
             content()
         }
@@ -114,8 +117,15 @@ struct ToolCallStage: View {
 
     @ViewBuilder private var resultSection: some View {
         if let result = call.result {
-            section(call.isError ? L("Error", "오류") : L("Result", "결과"), trailing: resultMeta(result)) {
-                ResultText(callId: call.id, text: result, isError: call.isError, large: large)
+            // Large JSON is drawn as a summary; the raw text stays one click away.
+            let digest = call.isError ? nil : DigestCache.digest(for: call.id, text: result)
+            section(call.isError ? L("Error", "오류") : L("Result", "결과"), trailing: resultMeta(result),
+                    raw: digest == nil ? nil : $showRaw) {
+                if let digest = digest, !showRaw {
+                    ResultDigestView(digest: digest, large: large)
+                } else {
+                    ResultText(callId: call.id, text: result, isError: call.isError, large: large)
+                }
             }
         } else if call.finishedAt == nil {
             HStack(spacing: 8) {
@@ -180,14 +190,20 @@ private struct ArgumentRows: View {
     }
 }
 
-/// The response, as tall as the stage allows. JSON is pretty-printed and colored once per result.
+/// The raw response, as tall as the stage allows. Long text is cut so drawing stays quick;
+/// short JSON is pretty-printed and colored once per result.
 private struct ResultText: View {
     let callId: String
     let text: String
     let isError: Bool
     let large: Bool
 
+    private static let rawLimit = 6_000
     private static var cache: [String: AttributedString] = [:]
+
+    private var shown: String {
+        text.count > Self.rawLimit ? String(text.prefix(Self.rawLimit)) + "\n…" : text
+    }
 
     var body: some View {
         ScrollView(.vertical) {
@@ -207,7 +223,7 @@ private struct ResultText: View {
         if !isError, let highlighted = highlighted {
             Text(highlighted)
         } else {
-            Text(text)
+            Text(shown)
                 .font(.system(size: large ? 12 : 11, design: .monospaced))
                 .foregroundColor(isError ? Theme.danger.opacity(0.95) : Theme.primaryText.opacity(0.88))
         }
@@ -216,7 +232,7 @@ private struct ResultText: View {
     private var highlighted: AttributedString? {
         let key = "\(callId):\(text.count):\(large)"
         if let cached = Self.cache[key] { return cached }
-        guard let tokens = JSONHighlight.tokens(text) else { return nil }
+        guard text.count <= Self.rawLimit, let tokens = JSONHighlight.tokens(text) else { return nil }
         let value = HighlightStyle.attributed(tokens, size: large ? 12 : 11)
         if Self.cache.count > 40 { Self.cache.removeAll() }
         Self.cache[key] = value

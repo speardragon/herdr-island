@@ -1,6 +1,6 @@
 id = "speardragon.herdr-island"
 name = "Herdr Island"
-version = "0.7.5"
+version = "0.7.6"
 min_herdr_version = "0.9.0"
 description = "Your herdr agents live in the MacBook notch (or the menu bar): approve, answer and jump to them from a Dynamic Island-style panel"
 platforms = ["macos"]

@@ -231,16 +231,27 @@ enum PromptParser {
             let bullet = window.reversed().first { isOutputBullet(lines[$0]) }
             start = (bullet ?? window.lowerBound - 1) + 1
         }
-        return lines[start..<first]
-            .map(stripQuoteBar)
+        return joinQuoted(lines[start..<first].map(stripQuoteBar))
             .filter { !$0.isEmpty && !$0.hasPrefix("╌") && !$0.hasPrefix("/permissions") }
     }
 
-    /// Long questions are drawn in a quote box ("│ text"); keep the text only.
-    private static func stripQuoteBar(_ line: String) -> String {
-        var trimmed = line.trimmingCharacters(in: .whitespaces)
-        if trimmed.hasPrefix("│") { trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces) }
-        return trimmed
+    /// Long questions are drawn in a quote box ("│ text"); keep the text and whether it was quoted.
+    private static func stripQuoteBar(_ line: String) -> (text: String, quoted: Bool) {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        guard trimmed.hasPrefix("│") else { return (trimmed, false) }
+        return (String(trimmed.dropFirst()).trimmingCharacters(in: .whitespaces), true)
+    }
+
+    /// A quoted question wraps over several lines; consecutive quoted lines are one paragraph.
+    private static func joinQuoted(_ lines: [(text: String, quoted: Bool)]) -> [String] {
+        lines.reduce(into: (out: [String](), joining: false)) { state, line in
+            if line.quoted && state.joining && !line.text.isEmpty, let last = state.out.popLast() {
+                state.out.append(last.isEmpty ? line.text : last + " " + line.text)
+            } else {
+                state.out.append(line.text)
+            }
+            state.joining = line.quoted && !line.text.isEmpty
+        }.out
     }
 
     private static func isOutputBullet(_ line: String) -> Bool {

@@ -169,6 +169,33 @@ func testAnswerKeyPlans() {
     expect(AnswerKeys.choose(permission.options[2], in: permission) == [.keys(["3"])], "permission prompts keep digits")
 }
 
+/// A long question wraps inside its quote box; the lines are one question, not a title plus a question.
+func testWrappedQuotedQuestion() {
+    let screen = """
+    ────────────────────────────────────────
+     ☐ Scope
+
+    │ How far should the fix go? The current state (no token or Origin check) is in the
+    │ ticket. The shared base is upgrading the session library, and the gateway cookie
+    │ goes in a separate PR.
+
+    ❯ 1. Origin everywhere + board token (Recommended)
+         Check Origin on every state-changing request.
+      2. Origin only
+      3. Type something.
+    ────────────────────────────────────────
+      4. Chat about this
+
+    Enter to select · ↑/↓ to navigate · Esc to cancel
+    """
+    guard let p = PromptParser.parse(screen) else { return expect(false, "wrapped quoted question should parse") }
+    expect(p.title == nil, "no title split off: \(p.title ?? "nil")")
+    expect(p.question == "How far should the fix go? The current state (no token or Origin check) is in the "
+           + "ticket. The shared base is upgrading the session library, and the gateway cookie goes in a separate PR.",
+           "joined question: \(p.question)")
+    expect(p.details.isEmpty && p.tabs.map(\.label) == ["Scope"], "details \(p.details) tabs \(p.tabs)")
+}
+
 func testQuotedQuestionAndNextRow() {
     let screen = """
     ────────────────────────────────────────
@@ -200,6 +227,7 @@ testCodexStyleApproval()
 testFreeTextRowWithTypedText()
 testAnswerKeyPlans()
 testQuotedQuestionAndNextRow()
+testWrappedQuotedQuestion()
 runConfigTests()
 runSessionTests()
 runLiveLogicTests()
@@ -207,6 +235,7 @@ runScreenRegionTests()
 runRecapTests()
 runQuestionTests()
 runHighlightTests()
+runDigestTests()
 
 print("\(checks - failures)/\(checks) checks passed")
 exit(failures == 0 ? 0 : 1)

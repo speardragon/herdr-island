@@ -78,6 +78,30 @@ enum Snapshot {
                 }
             }
         }
+        let issues = (1...30).map { n in
+            "{\"key\":\"DEMO-\(n)\",\"self\":\"https://example.dev/\(n)\",\"fields\":{\"summary\":\"Made-up task number \(n)\","
+                + "\"status\":{\"name\":\"\(n % 3 == 0 ? "Done" : n % 3 == 1 ? "In Progress" : "To Do")\"},"
+                + "\"assignee\":{\"displayName\":\"Alex Kim\"},\"updated\":\"2026-10-2\(n % 9)T09:15:00.000+0900\","
+                + "\"description\":\"Demo description for task \(n), wrapped\\nover lines.\"}}"
+        }
+        let digestCalls = [
+            ("jira", "mcp__claude_ai_Atlassian_Rovo__searchJiraIssuesUsingJql",
+             "{\"issues\":{\"nodes\":[\(issues.joined(separator: ","))]},\"queryResultsCount\":30,\"isLast\":true}"),
+            ("event", "mcp__claude_ai_Google_Calendar__get_event",
+             "{\"id\":\"e1\",\"summary\":\"Sprint review\",\"start\":{\"dateTime\":\"2026-10-24T14:00:00+09:00\"},"
+                + "\"end\":{\"dateTime\":\"2026-10-24T15:00:00+09:00\"},\"location\":\"Room 3\",\"attendees\":[{\"email\":\"a@example.com\"}],"
+                + "\"description\":\"Walk through the demo build and decide on the release.\"}"),
+        ]
+        let docs = (1...12).map { "{\"_id\":{\"$oid\":\"65f0c0ffee0\($0)\"},\"partnerId\":\"demo-\($0 % 3)\",\"cs\":\"lesson.\($0)\",\"n\":\($0 * 7),\"timestamp\":{\"$date\":\"2026-10-2\($0 % 9)T08:00:00Z\"}}" }
+        let allCalls = digestCalls + [("mongo", "mcp__edu-mongodb__aggregate", "{\"documents\":[\(docs.joined(separator: ","))],\"count\":12}")]
+        for (name, tool, result) in allCalls {
+            let call = ToolCall(id: "preview-\(name)", name: tool, kind: .mcp, summary: name, input: "{\"query\": \"demo\"}",
+                                result: result, startedAt: Date().addingTimeInterval(-2), finishedAt: Date())
+            for (suffix, large, size) in sizes {
+                render(ToolCallStage(call: call, large: large).padding(16).background(Color.black), size: size,
+                       to: directory.appendingPathComponent("preview-digest-\(name)\(suffix).png"))
+            }
+        }
         let command = "cd ~/demo && FOO=1 swift build -c release 2>&1 | grep -E \"error|warning\" # quiet\ncat <<'EOF' > notes.txt\nhello | world\nEOF\ngit commit -m \"fix: parse \\\"quoted\\\" names\""
         let now = Date()
         let shell = ToolCall(id: "preview-shell", name: "Bash", kind: .shell, summary: "Build and commit", input: "",

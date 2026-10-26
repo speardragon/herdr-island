@@ -105,7 +105,7 @@ For a working agent, details open on the **Live** view: the current step, drawn 
 | **TodoWrite** | A checklist with progress |
 | **AskUserQuestion** | Each question with its options; once answered, the picks light up, with any typed answer and notes |
 | **Skill** | A skill badge |
-| **MCP tools** | The server and tool, the arguments as key/value rows, and the result filling the stage with JSON pretty-printed |
+| **MCP tools** | The server and tool, the arguments as key/value rows, and the result summarized: list items as rows with a title, status and key facts, or an object's fields (the raw text is one click away) |
 
 ### No notch? Use the menu bar
 

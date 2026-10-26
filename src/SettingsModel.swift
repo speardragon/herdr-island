@@ -60,7 +60,7 @@ enum SystemSounds {
 
 enum AppInfo {
     static let name = "Herdr Island"
-    static let version = "0.7.5"
+    static let version = "0.7.6"
     static let stateDirectory = URL(fileURLWithPath: NSHomeDirectory()).appendingPathComponent(".local/state/herdr-island")
     static var logURL: URL { stateDirectory.appendingPathComponent("daemon.log") }
 }
