@@ -217,6 +217,40 @@ func testQuotedQuestionAndNextRow() {
     expect(p.multiSelect && p.tabs.count == 3, "multi-select with three tabs")
 }
 
+/// Options with a `preview` draw a box beside the list; long labels wrap inside the narrow left column.
+func testPreviewQuestion() {
+    let screen = """
+    ▸ ◐ AskUserQuestion  Which layout should the folders use?                    running…
+
+    ────────────────────────────────────────────────────────────────────────────
+    ←  ☐ 구조  ☐ Scope  ✔ Submit  →
+
+    Which layout should the folders use?
+
+    ❯ 1. ~/dev/alpha, ~/dev/beta      ┌────────────────────────────────┐
+        (Recommended)                 │ ~/dev/                         │
+      2. ~/dev/alpha/work             │ ├── alpha/   ← 예제 폴더       │
+        그대로                        │ │   └── ...                    │
+                                      │ └── beta/                      │
+                                      └────────────────────────────────┘
+
+                                      Notes: press n to add notes
+
+    ────────────────────────────────────────────────────────────────────────────
+      Chat about this
+
+    Enter to select · ↑/↓ to navigate · n to add notes · Tab to switch questions · Esc to cancel
+    """
+    guard let p = PromptParser.parse(screen) else { return expect(false, "preview question should parse") }
+    expect(p.kind == .question && p.question == "Which layout should the folders use?", "question \(p.question)")
+    expect(p.tabs.map(\.label) == ["구조", "Scope"], "tabs \(p.tabs.map(\.label))")
+    expect(p.options.map(\.label) == ["~/dev/alpha, ~/dev/beta (Recommended)", "~/dev/alpha/work 그대로"],
+           "wrapped labels joined, box dropped: \(p.options.map(\.label))")
+    expect(p.options.allSatisfy { $0.detail == nil }, "no box lines as details \(p.options.map(\.detail))")
+    expect(p.options[0].isCursor, "cursor on the first option")
+}
+
+testPreviewQuestion()
 testBashPermission()
 testAskSingle()
 testAskMulti()

@@ -91,9 +91,11 @@ enum PromptParser {
     }
 
     private static func parseRegion(_ screen: String) -> ParsedPrompt? {
-        let lines = screen.components(separatedBy: "\n").map(trimTrailing)
+        let rows = screen.components(separatedBy: "\n")
+        let unboxed = ScreenRegions.withoutPreviewBox(rows)
+        let lines = (unboxed ?? rows).map(trimTrailing)
         guard let last = lastOptionIndex(lines),
-              let options = collectOptions(lines, endingAt: last),
+              let options = collectOptions(lines, endingAt: last, wrapsLabels: unboxed != nil),
               let first = options.firstLine else { return nil }
         let header = headerLines(lines, above: first)
         guard !header.isEmpty else { return nil }
@@ -132,9 +134,15 @@ enum PromptParser {
     /// The last option must be followed only by blank lines, rules, indented
     /// descriptions or a key-hint footer; anything else means the list is old output.
     static func lastOptionIndex(_ lines: [String]) -> Int? {
+        var described: [String] = []
         for i in lines.indices.reversed() {
-            if optionLine(lines[i], at: i) != nil { return i }
-            if !isTrailer(lines[i]) { return nil }
+            if let option = optionLine(lines[i], at: i) {
+                return described.allSatisfy { leadingSpaces($0) > option.indent } ? i : nil
+            }
+            if !isTrailer(lines[i]) {
+                described.append(lines[i])
+                if described.count > 3 { return nil }
+            }
         }
         return nil
     }
@@ -143,6 +151,8 @@ enum PromptParser {
         let t = line.trimmingCharacters(in: .whitespaces)
         if t.isEmpty || isRule(t) || isNavigationRow(t) { return true }
         let lower = t.lowercased()
+        // A preview layout adds a notes hint and an unnumbered "Chat about this" row.
+        if lower.hasPrefix("notes:") || lower == "chat about this" { return true }
         return ["esc", "enter to", "tab to", "navigate", "cancel"].contains { lower.contains($0) }
     }
 
@@ -152,7 +162,8 @@ enum PromptParser {
     }
 
     /// Walks up from the last option to option 1, attaching indented lines as descriptions.
-    static func collectOptions(_ lines: [String], endingAt last: Int) -> OptionBlock? {
+    /// Beside a preview box, those lines are the rest of a label wrapped in the narrow column.
+    static func collectOptions(_ lines: [String], endingAt last: Int, wrapsLabels: Bool = false) -> OptionBlock? {
         var parsed: [OptionLine] = []
         var details: [Int: [String]] = [:]
         var pending: [String] = []
@@ -178,7 +189,13 @@ enum PromptParser {
         if let lastOption = ordered.last, let deepest = descriptionLines(Array(trailing), below: lastOption) {
             details[lastOption.number] = deepest
         }
-        var items = ordered.map { makeOption($0, detail: details[$0.number] ?? []) }
+        var items = ordered.map { line -> PromptOption in
+            let extra = details[line.number] ?? []
+            guard wrapsLabels, !extra.isEmpty else { return makeOption(line, detail: extra) }
+            let joined = OptionLine(index: line.index, indent: line.indent, cursor: line.cursor, number: line.number,
+                                    text: ([line.text] + extra).joined(separator: " "))
+            return makeOption(joined, detail: [])
+        }
         if let chat = items.firstIndex(where: { $0.role == .chat }), chat > 0, items[chat - 1].role == .choice {
             items[chat - 1] = items[chat - 1].asFreeText()
         }

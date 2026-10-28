@@ -28,6 +28,25 @@ enum ScreenRegions {
         text.reduce(0) { $0 + cellWidth($1) }
     }
 
+    // MARK: - Preview boxes
+
+    private static let boxEdges: Set<Character> = ["┌", "│", "└"]
+
+    /// Question options with a preview draw a box to the right of the list. Returns the rows with
+    /// the box cut off, or nil when there is no box (one opened by "┌" past the left margin).
+    static func withoutPreviewBox(_ lines: [String]) -> [String]? {
+        let tops = lines.compactMap { line -> Int? in
+            guard let top = line.firstIndex(of: "┌"), line.contains("┐") else { return nil }
+            let column = displayWidth(String(line[..<top]))
+            return column >= minimumColumn ? column : nil
+        }
+        guard let column = tops.min() else { return nil }
+        return lines.map { line in
+            let left = cut(line, at: column, on: boxEdges).left
+            return left.count < line.count ? left : line
+        }
+    }
+
     // MARK: - Finding the divider
 
     /// The leftmost column holding a divider character on most rows.
@@ -53,10 +72,10 @@ enum ScreenRegions {
     }
 
     /// Splits a row at the divider in `column`; a row without one stays on the left.
-    private static func cut(_ line: String, at column: Int) -> (left: String, right: String) {
+    private static func cut(_ line: String, at column: Int, on edges: Set<Character> = dividers) -> (left: String, right: String) {
         var cells = 0
         for index in line.indices {
-            if cells == column && dividers.contains(line[index]) {
+            if cells == column && edges.contains(line[index]) {
                 return (String(line[..<index]), String(line[line.index(after: index)...]))
             }
             if cells > column { break }
