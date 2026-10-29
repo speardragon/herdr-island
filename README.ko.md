@@ -155,6 +155,8 @@ herdr plugin link ./herdr-island
 
 설치 과정에서 Swift 헬퍼가 빌드되고, 다음 에이전트 이벤트부터 자동으로 실행됩니다. 별도로 실행할 필요는 없습니다.
 
+버전별 변경 사항은 [CHANGELOG](CHANGELOG.md)와 [릴리스 페이지](https://github.com/speardragon/herdr-island/releases)에서 볼 수 있습니다.
+
 ## 사용법
 
 | 작업 | 방법 |

@@ -155,6 +155,8 @@ herdr plugin link ./herdr-island
 
 The Swift helper builds during install and starts with the next agent event. There is nothing else to launch.
 
+What changed in each version is in the [changelog](CHANGELOG.md) and on the [releases page](https://github.com/speardragon/herdr-island/releases).
+
 ## Usage
 
 | To | Do |
