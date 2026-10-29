@@ -87,7 +87,20 @@ func testClaudeLiveDetails() {
     expect(d.lastText == "All **done**." && d.lastTextAt != nil, "latest assistant text")
 }
 
+/// A Read of a picture keeps its facts (not its base64); the format follows the file, not the mime sent.
+func testClaudeImageRead() {
+    let d = feed(ClaudeTranscriptParser(), "claude-image.jsonl").detail
+    let shot = d.toolCalls[0]
+    expect(shot.kind == .read && shot.image == ReadImage(format: "PNG", width: 2560, height: 1440, bytes: 245_760),
+           "image facts \(String(describing: shot.image))")
+    expect(shot.result.map { !$0.contains("AAAA") } ?? true, "no base64 kept")
+    expect(d.toolCalls[1].image == ReadImage(format: "WEBP", width: 64, height: 32, bytes: 900), "display size fallback")
+    expect(ReadImage.isImagePath("/a/b/Shot.JPG") && ReadImage.isImagePath("x.heic"), "image extensions")
+    expect(!ReadImage.isImagePath("/a/notes.md") && !ReadImage.isImagePath("/a/png"), "not images")
+}
+
 func runSessionTests() {
+    testClaudeImageRead()
     testClaudeLiveDetails()
     testClaudeSession()
     testClaudeIncrementalAndGarbage()

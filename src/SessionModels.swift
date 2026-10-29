@@ -55,6 +55,34 @@ struct AskedQuestion: Equatable {
     var notes: String?
 }
 
+/// A picture a Read returned: its facts only, never the base64 sent to the model.
+struct ReadImage: Equatable {
+    /// From the file's extension: the mime is what the model got, which may be a smaller JPEG.
+    let format: String
+    let width: Int?
+    let height: Int?
+    let bytes: Int?
+
+    private static let extensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic", "heif", "bmp", "tiff", "tif"]
+
+    static func isImagePath(_ path: String) -> Bool {
+        let ext = (path as NSString).pathExtension.lowercased()
+        return !ext.isEmpty && extensions.contains(ext)
+    }
+
+    /// `toolUseResult` of an image Read: `{type: "image", file: {type, originalSize, dimensions}}`.
+    static func from(result: [String: Any], path: String?) -> ReadImage? {
+        guard result["type"] as? String == "image", let file = result["file"] as? [String: Any] else { return nil }
+        let dims = file["dimensions"] as? [String: Any] ?? [:]
+        let ext = path.map { ($0 as NSString).pathExtension } ?? ""
+        let mime = (file["type"] as? String ?? "").replacingOccurrences(of: "image/", with: "")
+        return ReadImage(format: (ext.isEmpty ? mime : ext).uppercased(),
+                         width: (dims["originalWidth"] ?? dims["displayWidth"]) as? Int,
+                         height: (dims["originalHeight"] ?? dims["displayHeight"]) as? Int,
+                         bytes: file["originalSize"] as? Int)
+    }
+}
+
 struct ToolCall: Identifiable, Equatable {
     let id: String
     let name: String
@@ -73,6 +101,8 @@ struct ToolCall: Identifiable, Equatable {
     /// String and number inputs by key, untruncated up to Truncate.contentLimit (for the live stage).
     var fields: [String: String] = [:]
     var readRange: ReadRange?
+    /// The picture a Read returned.
+    var image: ReadImage?
     /// The text a Read returned.
     var excerpt: String?
     var patch: [PatchHunk] = []
@@ -156,6 +186,8 @@ struct SessionDetail: Equatable {
 enum Truncate {
     static let resultLimit = 4_000
     static let contentLimit = 20_000
+    /// Database results: a page of nested documents easily passes `contentLimit`.
+    static let databaseLimit = 300_000
 
     static func text(_ value: String, limit: Int) -> String {
         guard value.count > limit else { return value }

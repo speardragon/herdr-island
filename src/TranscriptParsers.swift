@@ -141,12 +141,18 @@ struct ClaudeTranscriptParser: TranscriptParser {
 
     private mutating func toolResult(_ block: JSON, extra: JSON?, at date: Date?) {
         guard let id = block["tool_use_id"] as? String, let index = toolIndex[id] else { return }
-        // MCP results are often long JSON documents; keep enough of them to read.
-        let limit = detail.toolCalls[index].kind == .mcp ? Truncate.contentLimit : Truncate.resultLimit
+        // MCP results are often long JSON documents; keep enough of them to read, and more of
+        // database results, whose documents are parsed once and drawn lazily.
+        let call = detail.toolCalls[index]
+        let limit = MongoTool(name: call.name) != nil ? Truncate.databaseLimit
+            : call.kind == .mcp ? Truncate.contentLimit : Truncate.resultLimit
         detail.toolCalls[index].result = resultText(block["content"]).map { Truncate.text($0, limit: limit) }
         detail.toolCalls[index].resultImages = (block["content"] as? [JSON])?.filter { $0["type"] as? String == "image" }.count ?? 0
         detail.toolCalls[index].isError = block["is_error"] as? Bool ?? false
         detail.toolCalls[index].finishedAt = date
+        if let extra = extra, call.kind == .read {
+            detail.toolCalls[index].image = ReadImage.from(result: extra, path: call.fields["file_path"])
+        }
         if let file = extra?["file"] as? JSON, file["startLine"] != nil {
             detail.toolCalls[index].readRange = ReadRange.from(input: detail.toolCalls[index].fields, result: file)
             detail.toolCalls[index].excerpt = (file["content"] as? String).map { Truncate.text($0, limit: Truncate.contentLimit) }

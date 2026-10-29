@@ -39,6 +39,24 @@ enum HighlightStyle {
     }
 }
 
+/// Calling, done or failed, as a tinted capsule.
+struct ToolStatusPill: View {
+    let call: ToolCall
+
+    var body: some View {
+        let (title, color): (String, Color) = call.finishedAt == nil ? (L("Calling", "호출 중"), Theme.working)
+            : call.isError ? (L("Error", "오류"), Theme.danger) : (L("Done", "완료"), Theme.done)
+        return HStack(spacing: 5) {
+            if call.finishedAt == nil { StatusDot(status: .working, size: 6) }
+            Text(title).font(.system(size: 11, weight: .semibold))
+        }
+        .foregroundColor(color)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(color.opacity(0.14)))
+    }
+}
+
 struct ToolCallStage: View {
     let call: ToolCall
     let large: Bool
@@ -79,22 +97,9 @@ struct ToolCallStage: View {
                 }
             }
             Spacer(minLength: 8)
-            statusPill
+            ToolStatusPill(call: call)
             ElapsedText(since: call.startedAt, until: call.finishedAt)
         }
-    }
-
-    private var statusPill: some View {
-        let (title, color): (String, Color) = call.finishedAt == nil ? (L("Calling", "호출 중"), Theme.working)
-            : call.isError ? (L("Error", "오류"), Theme.danger) : (L("Done", "완료"), Theme.done)
-        return HStack(spacing: 5) {
-            if call.finishedAt == nil { StatusDot(status: .working, size: 6) }
-            Text(title).font(.system(size: 11, weight: .semibold))
-        }
-        .foregroundColor(color)
-        .padding(.horizontal, 9)
-        .padding(.vertical, 4)
-        .background(Capsule().fill(color.opacity(0.14)))
     }
 
     private func section<Content: View>(_ title: String, trailing: String? = nil, raw: Binding<Bool>? = nil,
@@ -192,7 +197,7 @@ private struct ArgumentRows: View {
 
 /// The raw response, as tall as the stage allows. Long text is cut so drawing stays quick;
 /// short JSON is pretty-printed and colored once per result.
-private struct ResultText: View {
+struct ResultText: View {
     let callId: String
     let text: String
     let isError: Bool

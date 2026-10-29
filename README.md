@@ -95,7 +95,7 @@ For a working agent, details open on the **Live** view: the current step, drawn 
 
 | Tool | How it is shown |
 | --- | --- |
-| **Read** | The whole file, with the lines being read lit up and scrolled into view. Markdown renders as a document. |
+| **Read** | The whole file, with the lines being read lit up and scrolled into view. Markdown renders as a document, and a picture shows the picture itself with its format, size and dimensions. |
 | **Write** | An editor with the new file typing itself in. |
 | **Edit** | A diff with real line numbers; added lines type in. |
 | **Bash** | A terminal: the command with quiet highlighting, elapsed time, output and failures |
@@ -106,6 +106,7 @@ For a working agent, details open on the **Live** view: the current step, drawn 
 | **AskUserQuestion** | Each question with its options; once answered, the picks light up, with any typed answer and notes |
 | **Skill** | A skill badge |
 | **MCP tools** | The server and tool, the arguments as key/value rows, and the result summarized: list items as rows with a title, status and key facts, or an object's fields (the raw text is one click away) |
+| **MongoDB MCP** | Like a database viewer: `database › collection`, the filter or pipeline in mongosh style, documents as cards of typed fields (ObjectId, dates, numbers and strings in their own colors, nested values folded), counts and collection lists. List and JSON views. |
 
 ### No notch? Use the menu bar
 

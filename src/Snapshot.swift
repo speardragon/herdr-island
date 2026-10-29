@@ -63,6 +63,63 @@ enum Snapshot {
         renderRecapPreview(into: directory)
         renderQuestionPreview(fixtures: fixtures, into: directory)
         renderToolPreview(fixtures: fixtures, into: directory)
+        renderMongoPreview(into: directory)
+        renderImagePreview(into: directory)
+    }
+
+    /// MongoDB find, aggregate, count and list-collections with made-up documents.
+    private static func renderMongoPreview(into directory: URL) {
+        let docs = (1...12).map { n in
+            "{\"_id\":{\"$oid\":\"65f0c0ffee00000000000a\(String(format: "%02d", n))\"},\"title\":\"Demo lesson \(n)\",\"grade\":\(n % 4 + 1),"
+                + "\"published\":\(n % 2 == 0),\"reviewer\":null,\"createdAt\":{\"$date\":\"2026-10-2\(n % 9)T08:00:00Z\"},"
+                + "\"views\":{\"$numberLong\":\"\(n * 1234)\"},\"tags\":[\"math\",\"demo\"],\"author\":{\"name\":\"Alex Kim\",\"team\":\"content\"}}"
+        }
+        let calls: [(String, String, String, String)] = [
+            ("find", "mcp__edu-mongodb__find",
+             "{\"database\":\"school\",\"collection\":\"lessons\",\"filter\":{\"grade\":{\"$gte\":2},\"published\":true},\"sort\":{\"createdAt\":-1},\"limit\":12}",
+             "{\"documents\":[\(docs.joined(separator: ","))],\"queryResultsCount\":148,\"appliedLimits\":[]}"),
+            ("aggregate", "mcp__xAPI-mongodb__aggregate",
+             "{\"database\":\"school\",\"collection\":\"events\",\"pipeline\":[{\"$match\":{\"verb\":\"completed\"}},"
+                + "{\"$unwind\":\"$tags\"},{\"$lookup\":{\"from\":\"students\",\"localField\":\"student\",\"foreignField\":\"_id\",\"as\":\"who\"}},"
+                + "{\"$group\":{\"_id\":\"$student\",\"n\":{\"$sum\":1}}},{\"$sort\":{\"n\":-1}},{\"$project\":{\"n\":1}},{\"$skip\":0},{\"$limit\":5}]}",
+             "{\"documents\":[{\"_id\":\"student-07\",\"n\":42},{\"_id\":\"student-02\",\"n\":37},{\"_id\":\"student-11\",\"n\":21}],\"count\":3}"),
+            ("count", "mcp__edu-mongodb__count",
+             "{\"database\":\"school\",\"collection\":\"events\",\"query\":{\"verb\":\"completed\"}}", "{\"count\":12873}"),
+            ("collections", "mcp__mongodb__list-collections", "{\"database\":\"school\"}",
+             "{\"collections\":[" + ["lessons", "events", "students", "teachers", "classes", "quizzes", "answers", "reports"]
+                .map { "{\"name\":\"\($0)\"}" }.joined(separator: ",") + "]}"),
+        ]
+        let sizes: [(String, Bool, NSSize)] = [("", false, NSSize(width: 520, height: 520)), ("-large", true, NSSize(width: 1000, height: 640))]
+        for (name, tool, input, result) in calls {
+            let call = ToolCall(id: "preview-mongo-\(name)", name: tool, kind: .mcp, summary: name, input: input,
+                                result: result, startedAt: Date().addingTimeInterval(-1), finishedAt: Date())
+            guard let view = MongoView(call: call) else { continue }
+            for (suffix, large, size) in sizes {
+                render(MongoStage(call: call, view: view, large: large).padding(16).background(Color.black), size: size,
+                       to: directory.appendingPathComponent("preview-mongo-\(name)\(suffix).png"))
+            }
+        }
+    }
+
+    /// A Read of a picture, drawn from a made-up gradient instead of a file on disk.
+    private static func renderImagePreview(into directory: URL) {
+        let path = "/tmp/demo/screenshot.png"
+        let image = NSImage(size: NSSize(width: 1280, height: 720), flipped: false) { rect in
+            NSGradient(colors: [NSColor(red: 0.11, green: 0.16, blue: 0.31, alpha: 1), NSColor(red: 0.06, green: 0.37, blue: 0.43, alpha: 1)])?
+                .draw(in: rect, angle: 30)
+            NSColor.white.withAlphaComponent(0.9).setFill()
+            NSBezierPath(roundedRect: NSRect(x: 160, y: 160, width: 960, height: 400), xRadius: 28, yRadius: 28).fill()
+            return true
+        }
+        ImageFileLoader.previewImages[path] = image
+        let call = ToolCall(id: "preview-image", name: "Read", kind: .read, summary: path, input: "",
+                            startedAt: Date().addingTimeInterval(-1), finishedAt: Date(), fields: ["file_path": path])
+        var read = call
+        read.image = ReadImage(format: "PNG", width: 2560, height: 1440, bytes: 412_000)
+        for (suffix, large, size) in [("", false, NSSize(width: 520, height: 420)), ("-large", true, NSSize(width: 1000, height: 640))] {
+            render(ImageReadStage(call: read, large: large).padding(16).background(Color.black), size: size,
+                   to: directory.appendingPathComponent("preview-image\(suffix).png"))
+        }
     }
 
     /// MCP calls from tests/fixtures and a highlighted shell command, finished and mid-typing.
@@ -92,9 +149,7 @@ enum Snapshot {
                 + "\"end\":{\"dateTime\":\"2026-10-24T15:00:00+09:00\"},\"location\":\"Room 3\",\"attendees\":[{\"email\":\"a@example.com\"}],"
                 + "\"description\":\"Walk through the demo build and decide on the release.\"}"),
         ]
-        let docs = (1...12).map { "{\"_id\":{\"$oid\":\"65f0c0ffee0\($0)\"},\"partnerId\":\"demo-\($0 % 3)\",\"cs\":\"lesson.\($0)\",\"n\":\($0 * 7),\"timestamp\":{\"$date\":\"2026-10-2\($0 % 9)T08:00:00Z\"}}" }
-        let allCalls = digestCalls + [("mongo", "mcp__edu-mongodb__aggregate", "{\"documents\":[\(docs.joined(separator: ","))],\"count\":12}")]
-        for (name, tool, result) in allCalls {
+        for (name, tool, result) in digestCalls {
             let call = ToolCall(id: "preview-\(name)", name: tool, kind: .mcp, summary: name, input: "{\"query\": \"demo\"}",
                                 result: result, startedAt: Date().addingTimeInterval(-2), finishedAt: Date())
             for (suffix, large, size) in sizes {

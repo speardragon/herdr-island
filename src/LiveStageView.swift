@@ -122,7 +122,13 @@ struct LiveStageView: View {
 
     @ViewBuilder private func renderer(_ call: ToolCall) -> some View {
         switch call.kind {
-        case .read: ReadStage(call: call, large: large)
+        case .read:
+            // By extension too, so a running Read of a picture never flashes as code.
+            if call.image != nil || ReadImage.isImagePath(call.fields["file_path"] ?? "") {
+                ImageReadStage(call: call, large: large)
+            } else {
+                ReadStage(call: call, large: large)
+            }
         case .write: WriteStage(call: call, large: large)
         case .edit:
             if call.name == "apply_patch" || call.fields["old_string"] == nil && call.patch.isEmpty {
@@ -138,7 +144,12 @@ struct LiveStageView: View {
         case .skill: SkillStage(call: call)
         case .question:
             if call.questions.isEmpty { ToolCallStage(call: call, large: large) } else { QuestionStage(call: call, large: large) }
-        case .mcp, .other: ToolCallStage(call: call, large: large)
+        case .mcp, .other:
+            if let mongo = MongoViewCache.view(for: call) {
+                MongoStage(call: call, view: mongo, large: large)
+            } else {
+                ToolCallStage(call: call, large: large)
+            }
         }
     }
 

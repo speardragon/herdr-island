@@ -19,11 +19,12 @@ enum DigestCache {
 
 struct RawToggle: View {
     @Binding var raw: Bool
+    var labels = (L("Summary", "요약"), L("Raw", "원본"))
 
     var body: some View {
         HStack(spacing: 2) {
-            option(L("Summary", "요약"), selected: !raw) { raw = false }
-            option(L("Raw", "원본"), selected: raw) { raw = true }
+            option(labels.0, selected: !raw) { raw = false }
+            option(labels.1, selected: raw) { raw = true }
         }
         .padding(2)
         .background(Capsule().fill(Color.white.opacity(0.06)))
