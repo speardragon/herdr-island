@@ -250,6 +250,36 @@ func testPreviewQuestion() {
     expect(p.options[0].isCursor, "cursor on the first option")
 }
 
+/// Newer Claude Code writes the session's name into the rule under the prompt.
+func testRuleWithSessionLabel() {
+    let screen = """
+    ▸ ◐ AskUserQuestion  Where should the demo lesson be created?                 running…
+    ────────────────────────────────────────────────────────────────────────────
+     ☐ 위치
+
+    │ Where should the demo lesson be created? The editor offers a few places,
+    │ and the review page only changes visibility.
+
+    ❯ 1. New chapter in the outline
+         Create a throwaway chapter, test there, then delete it
+      2. Somewhere else
+         Tell me the path you use
+      3. Type something.
+    ────────────────────────────────────────────────────────────────────────────
+      4. Chat about this
+
+    Enter to select · ↑/↓ to navigate · Esc to cancel
+    ───────────────────────────────────────────────────────── 데모 세션 (Branch 2) ─
+    """
+    expect(PromptParser.isRule("──────────── 데모 세션 (Branch 2) ─"), "a rule carrying a label is still a rule")
+    expect(!PromptParser.isRule("─ not a rule"), "a dash before text is not a rule")
+    guard let p = PromptParser.parse(screen) else { return expect(false, "question above a labelled rule should parse") }
+    expect(p.kind == .question, "kind \(p.kind)")
+    expect(p.options.map(\.number) == [1, 2, 3, 4], "options \(p.options.map(\.number))")
+    expect(p.question.hasPrefix("Where should the demo lesson be created?"), "question \(p.question)")
+}
+
+testRuleWithSessionLabel()
 testPreviewQuestion()
 testBashPermission()
 testAskSingle()

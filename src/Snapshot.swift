@@ -65,6 +65,7 @@ enum Snapshot {
         renderToolPreview(fixtures: fixtures, into: directory)
         renderMongoPreview(into: directory)
         renderImagePreview(into: directory)
+        renderWrapPreview(into: directory)
     }
 
     /// MongoDB find, aggregate, count and list-collections with made-up documents.

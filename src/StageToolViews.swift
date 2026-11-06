@@ -80,7 +80,7 @@ struct ShellStage: View {
                         Color.clear.frame(height: 1).id("end")
                     }
                     .font(.system(size: fontSize, design: .monospaced))
-                    .fixedSize(horizontal: true, vertical: true)
+                    .stageLineFit()
                     .textSelection(.enabled)
                     .padding(12)
                 }

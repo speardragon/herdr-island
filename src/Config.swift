@@ -15,6 +15,7 @@ import Foundation
 //              close_when_clear = true   close a self-opened island once nothing needs attention
 //              blocked_sound = "none" | macOS sound name, done_sound = "none"
 //   [glow]     enabled = true, blocked_color = "FF453A", done_color = "30D158", recap_color = "BF5AF2", intensity = 0.6 (0.1–1)
+//   [stage]    wrap_lines = false   wrap long commands and code on the live stage instead of scrolling sideways
 
 enum DisplayMode: String, CaseIterable {
     case auto, notch, menubar, both
@@ -71,6 +72,7 @@ struct Config: Equatable {
     var glowIntensity: Double = 0.6
     var blockedSound = "none"
     var doneSound = "none"
+    var stageWrap = false
 
     static let pluginId = "speardragon.herdr-island"
 
@@ -132,6 +134,7 @@ struct Config: Equatable {
         c.donePeekSeconds = number("behavior.done_peek_seconds") ?? legacy ?? defaults.donePeekSeconds
         c.blockedSound = values["behavior.blocked_sound"] ?? defaults.blockedSound
         c.doneSound = values["behavior.done_sound"] ?? defaults.doneSound
+        c.stageWrap = bool("stage.wrap_lines", defaults.stageWrap)
         return c
     }
 
@@ -202,6 +205,7 @@ struct Config: Equatable {
             ("glow", "intensity", number(config.glowIntensity)),
             ("behavior", "blocked_sound", quoted(config.blockedSound)),
             ("behavior", "done_sound", quoted(config.doneSound)),
+            ("stage", "wrap_lines", String(config.stageWrap)),
         ]
         let withoutLegacy = removing(key: "peek_seconds", in: "behavior", text: text)
         return entries.reduce(withoutLegacy) { result, entry in

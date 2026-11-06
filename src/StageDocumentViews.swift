@@ -140,15 +140,16 @@ struct CodeDocument: View {
     let lines: [(number: Int, text: String)]
     let highlight: ReadRange
     let large: Bool
+    @Environment(\.stageWrap) private var wrap
 
     var body: some View {
         GeometryReader { geo in
         ScrollViewReader { proxy in
-            ScrollView([.vertical, .horizontal], showsIndicators: true) {
+            ScrollView(wrap.wrappedValue ? .vertical : [.vertical, .horizontal], showsIndicators: true) {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(lines, id: \.number) { line in
                         let lit = highlight.contains(line.number)
-                        HStack(spacing: 0) {
+                        HStack(alignment: .top, spacing: 0) {
                             Rectangle().fill(lit ? SeriesColor.cacheRead : .clear).frame(width: 2)
                             Text("\(line.number)")
                                 .foregroundColor(lit ? Theme.secondaryText : Theme.tertiaryText.opacity(0.7))
@@ -156,7 +157,7 @@ struct CodeDocument: View {
                                 .padding(.trailing, 12)
                             Text(line.text.isEmpty ? " " : line.text)
                                 .foregroundColor(lit ? Theme.primaryText : Theme.primaryText.opacity(0.45))
-                                .fixedSize(horizontal: true, vertical: false)
+                                .fixedSize(horizontal: !wrap.wrappedValue, vertical: wrap.wrappedValue)
                             Spacer(minLength: 0)
                         }
                         .font(.system(size: large ? 12.5 : 11.5, design: .monospaced))
@@ -167,7 +168,7 @@ struct CodeDocument: View {
                 }
                 .textSelection(.enabled)
                 // Start at the top-left; a bare two-axis ScrollView centres short content.
-                .frame(minWidth: geo.size.width, minHeight: geo.size.height, alignment: .topLeading)
+                .stageCanvasFrame(geo.size, wrap: wrap.wrappedValue)
             }
             .background(EditorBackground())
             .onAppear { scrollToRange(proxy) }

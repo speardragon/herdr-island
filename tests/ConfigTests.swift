@@ -143,7 +143,17 @@ func testConfigFade() {
     expect(Config.decode(Config.encode(c, into: "")) == c, "fade round trip")
 }
 
+func testConfigStageWrap() {
+    expect(!Config().stageWrap, "long lines scroll sideways by default")
+    let c = Config.decode("[stage]\nwrap_lines = true\n")
+    expect(c.stageWrap, "stage.wrap_lines read")
+    let written = Config.encode(c, into: "")
+    expect(written.contains("[stage]\nwrap_lines = true"), "stage.wrap_lines written:\n\(written)")
+    expect(Config.decode(written) == c, "wrap round trip")
+}
+
 func runConfigTests() {
+    testConfigStageWrap()
     testConfigFade()
     testConfigGlow()
     testConfigPlacementAndClosingKeys()

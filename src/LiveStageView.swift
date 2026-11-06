@@ -21,6 +21,7 @@ struct LiveStageView: View {
     let large: Bool
     /// A step the user picked from the history; nil follows the agent live.
     @State private var pinned: String?
+    @Environment(\.stageWrap) private var wrap
 
     /// Main-agent steps only; a subagent's steps show inside its Task stage.
     private var steps: [ToolCall] { detail.toolCalls.filter { !$0.isSubagent } }
@@ -86,6 +87,9 @@ struct LiveStageView: View {
                     .truncationMode(.middle)
             }
             Spacer(minLength: 0)
+            if case .tool(let call) = event, StageWrap.applies(to: call) {
+                WrapToggle(wrap: wrap)
+            }
         }
     }
 
@@ -124,17 +128,17 @@ struct LiveStageView: View {
         switch call.kind {
         case .read:
             // By extension too, so a running Read of a picture never flashes as code.
-            if call.image != nil || ReadImage.isImagePath(call.fields["file_path"] ?? "") {
+            if call.readsPicture {
                 ImageReadStage(call: call, large: large)
             } else {
                 ReadStage(call: call, large: large)
             }
         case .write: WriteStage(call: call, large: large)
         case .edit:
-            if call.name == "apply_patch" || call.fields["old_string"] == nil && call.patch.isEmpty {
-                ToolCallStage(call: call, large: large)
-            } else {
+            if call.editsAsDiff {
                 EditStage(call: call, large: large)
+            } else {
+                ToolCallStage(call: call, large: large)
             }
         case .shell: ShellStage(call: call, large: large)
         case .search: SearchStage(call: call, large: large)

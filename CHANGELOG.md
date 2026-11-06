@@ -3,6 +3,18 @@
 All notable changes to Herdr Island. Versions follow `herdr-plugin.toml`; each has a matching
 [GitHub release](https://github.com/speardragon/herdr-island/releases). Screenshots use made-up demo data.
 
+## 0.7.9 — 2026-11-06
+
+### Added
+- **Wrap toggle on the live stage.** Long commands, written files, code reads and diffs scroll sideways by default; the **Wrap** button in the stage's header folds them to the stage's width instead. Line numbers stay beside the line they belong to. The choice is remembered as `stage.wrap_lines` in `config.toml`.
+
+### Fixed
+- Questions are read again when Claude Code draws the session name in the rule under the prompt (`──── my session (Branch 2) ─`).
+- Buttons in the list and the detail pane take the first click while another app is active, instead of sometimes doing nothing until the island was reopened (macOS 15+).
+
+![Long lines scrolling sideways](docs/images/releases/0.7.9/wrap-off.png)
+![The same lines wrapped](docs/images/releases/0.7.9/wrap-on.png)
+
 ## 0.7.8 — 2026-10-29
 
 ### Added

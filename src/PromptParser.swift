@@ -335,8 +335,11 @@ enum PromptParser {
         trimmed == "Submit" || trimmed == "Next"
     }
 
+    /// A horizontal rule, plain or carrying a label such as `──── my session (Branch 3) ─`,
+    /// which newer Claude Code draws under the prompt.
     static func isRule(_ trimmed: String) -> Bool {
-        trimmed.count >= 10 && trimmed.allSatisfy { $0 == "─" }
+        guard trimmed.hasPrefix("───"), trimmed.hasSuffix("─") else { return false }
+        return trimmed.filter { $0 == "─" }.count >= 10
     }
 
     private static func leadingSpaces(_ line: String) -> Int {

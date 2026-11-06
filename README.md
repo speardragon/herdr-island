@@ -166,6 +166,7 @@ What changed in each version is in the [changelog](CHANGELOG.md) and on the [rel
 | Go to a finished task | **Go to tab** on its card |
 | See session details | The details button on a card or row |
 | Make the live stage bigger | **Bigger** (↗) at the top of the details |
+| Wrap long commands and code | **Wrap** at the right of the live stage's header (again to scroll sideways; the choice is kept) |
 | Hide things | ✕ on a card hides it until its status changes; ✕ top right closes the island |
 
 ### Keyboard shortcut
@@ -235,6 +236,9 @@ blocked_color = "FF453A"
 done_color = "30D158"
 recap_color = "BF5AF2"     # done only because Claude Code printed a recap
 intensity = 0.6            # 0.1 – 1
+
+[stage]
+wrap_lines = false         # wrap long commands and code in the live view (the header's Wrap button)
 ```
 
 Run the `reload` action after editing the file.

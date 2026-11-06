@@ -272,6 +272,7 @@ struct ExpandedContent: View {
                 SessionDetailView(agent: agent, location: store.location(of: agent), watcher: watcher,
                                   large: true, height: state.stageSize.height - 60,
                                   onToggleLarge: { state.toggleStage() }, onClose: { state.closeDetail() })
+                    .environment(\.stageWrap, $settings.config.stageWrap)
                     .frame(width: state.stageSize.width - 28)
                     .transition(.opacity.combined(with: .scale(scale: 0.97, anchor: .top)))
             } else {
@@ -293,6 +294,7 @@ struct ExpandedContent: View {
                         .padding(.horizontal, (Theme.detailGutter - 1) / 2)
                     SessionDetailView(agent: agent, location: store.location(of: agent), watcher: watcher,
                                       onToggleLarge: { state.toggleStage() }, onClose: { state.closeDetail() })
+                    .environment(\.stageWrap, $settings.config.stageWrap)
                     .frame(width: Theme.detailPaneWidth)
                     .transition(.asymmetric(
                         insertion: .move(edge: .trailing).combined(with: .opacity).animation(Theme.spring.delay(0.08)),

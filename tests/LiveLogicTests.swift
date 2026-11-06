@@ -71,7 +71,25 @@ func testTypingProgress() {
     expect(Typing.duration(for: 10) < 0.2, "short text is quick")
 }
 
+func testStageWrap() {
+    func call(_ kind: ToolKind, _ name: String = "Tool", fields: [String: String] = [:]) -> ToolCall {
+        ToolCall(id: name, name: name, kind: kind, summary: "", input: "", startedAt: nil, fields: fields)
+    }
+    expect(StageWrap.applies(to: call(.shell, "Bash")), "shell commands wrap")
+    expect(StageWrap.applies(to: call(.write, "Write")), "written files wrap")
+    expect(StageWrap.applies(to: call(.read, "Read", fields: ["file_path": "/a/b.swift"])), "code reads wrap")
+    expect(!StageWrap.applies(to: call(.read, "Read", fields: ["file_path": "/a/b.png"])), "pictures do not")
+    expect(!StageWrap.applies(to: call(.read, "Read", fields: ["file_path": "/a/README.md"])), "markdown already wraps")
+    expect(StageWrap.applies(to: call(.edit, "Edit", fields: ["old_string": "a", "new_string": "b"])), "edits wrap")
+    expect(!StageWrap.applies(to: call(.edit, "apply_patch")), "patch cards do not")
+    expect(!StageWrap.applies(to: call(.todo, "TodoWrite")), "checklists do not")
+    let rows = StageWrap.numberedRows("one\ntwo\n", firstLine: 7)
+    expect(rows.map(\.number) == [7, 8, 9] && rows.map(\.text) == ["one", "two", ""], "rows \(rows)")
+    expect(StageWrap.numberedRows("", firstLine: 1).count == 1, "empty text keeps one row")
+}
+
 func runLiveLogicTests() {
+    testStageWrap()
     testReadRange()
     testPatchHunks()
     testMarkdownBlocks()

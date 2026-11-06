@@ -7,12 +7,12 @@ import SwiftUI
 /// (A bare ScrollView centres content smaller than itself.)
 struct ScrollCanvas<Content: View>: View {
     @ViewBuilder let content: () -> Content
+    @Environment(\.stageWrap) private var wrap
 
     var body: some View {
         GeometryReader { geo in
-            ScrollView([.vertical, .horizontal]) {
-                content()
-                    .frame(minWidth: geo.size.width, minHeight: geo.size.height, alignment: .topLeading)
+            ScrollView(wrap.wrappedValue ? .vertical : [.vertical, .horizontal]) {
+                content().stageCanvasFrame(geo.size, wrap: wrap.wrappedValue)
             }
         }
     }
@@ -166,10 +166,19 @@ struct GutterText: View {
     let firstLine: Int
     var caret = false
     var large = false
+    @Environment(\.stageWrap) private var wrap
 
     var body: some View {
+        if wrap.wrappedValue {
+            WrappedGutterText(text: text, firstLine: firstLine, caret: caret, fontSize: large ? 12.5 : 11.5)
+        } else {
+            scrolling
+        }
+    }
+
+    private var scrolling: some View {
         let count = max(1, text.components(separatedBy: "\n").count)
-        HStack(alignment: .top, spacing: 12) {
+        return HStack(alignment: .top, spacing: 12) {
             Text((firstLine..<(firstLine + count)).map(String.init).joined(separator: "\n"))
                 .foregroundColor(Theme.tertiaryText.opacity(0.7))
                 .multilineTextAlignment(.trailing)
@@ -253,7 +262,7 @@ struct HunkLines: View {
             }
         }
         .font(.system(size: large ? 12.5 : 11.5, design: .monospaced))
-        .fixedSize(horizontal: true, vertical: true)
+        .stageLineFit()
         .textSelection(.enabled)
     }
 
@@ -272,7 +281,7 @@ struct HunkLines: View {
     private func lineRow(_ line: PatchHunk.Line, text: String, caret: Bool) -> some View {
         let number = line.newNumber ?? line.oldNumber
         let color: Color = line.kind == .added ? Theme.done : line.kind == .removed ? Theme.danger : .clear
-        return HStack(spacing: 0) {
+        return HStack(alignment: .top, spacing: 0) {
             Text(number.map(String.init) ?? "")
                 .foregroundColor(Theme.tertiaryText.opacity(0.7))
                 .frame(width: 40, alignment: .trailing)

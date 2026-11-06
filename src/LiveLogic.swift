@@ -189,3 +189,29 @@ struct QuestionAnswer: Equatable {
         return QuestionAnswer(picked: picked, typed: typed.isEmpty ? nil : typed)
     }
 }
+
+extension ToolCall {
+    /// A Read of a picture, by its result or, while it runs, by the file's extension.
+    var readsPicture: Bool { image != nil || ReadImage.isImagePath(fields["file_path"] ?? "") }
+
+    /// An Edit drawn as a diff; patches and edits with nothing to compare get the generic card.
+    var editsAsDiff: Bool { name != "apply_patch" && (fields["old_string"] != nil || !patch.isEmpty) }
+}
+
+/// The live stage's wrap toggle: which stages draw long lines that can wrap, and the
+/// numbered rows a wrapped gutter needs (one per source line, so numbers stay beside their line).
+enum StageWrap {
+    static func applies(to call: ToolCall) -> Bool {
+        switch call.kind {
+        case .shell, .write: return true
+        // Markdown is set as prose and always wraps.
+        case .read: return !call.readsPicture && !MarkdownLine.isMarkdown(path: call.fields["file_path"] ?? "")
+        case .edit: return call.editsAsDiff
+        default: return false
+        }
+    }
+
+    static func numberedRows(_ text: String, firstLine: Int) -> [(number: Int, text: String)] {
+        text.components(separatedBy: "\n").enumerated().map { (firstLine + $0.offset, $0.element) }
+    }
+}

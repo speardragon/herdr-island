@@ -13,6 +13,20 @@ final class IslandHostingView<V: View>: NSHostingView<V> {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 }
 
+/// The hosting view's first-mouse answer covers only views drawn by the hosting view itself.
+/// Scroll views are separate AppKit views that turn a click on an inactive panel into a
+/// "focus the window" click, so buttons in the list and the detail pane would do nothing
+/// while the terminal is active. This lets every gesture take that click too (macOS 15+).
+struct AcceptsActivationClicks: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 15.0, *) {
+            content.allowsWindowActivationEvents(true)
+        } else {
+            content
+        }
+    }
+}
+
 // Hosts IslandView in a transparent, oversized panel. Mouse events pass through
 // everywhere except the drawn island, found by polling the cursor because an
 // accessory app gets no mouse-moved events while another app is active.
@@ -54,7 +68,7 @@ final class IslandWindow {
         panel.isMovable = false
         panel.ignoresMouseEvents = true
         panel.collectionBehavior = [.canJoinAllSpaces, .stationary, .fullScreenAuxiliary, .ignoresCycle]
-        let host = IslandHostingView(rootView: IslandView(store: store, state: state))
+        let host = IslandHostingView(rootView: IslandView(store: store, state: state).modifier(AcceptsActivationClicks()))
         host.wantsLayer = true
         host.layer?.backgroundColor = .clear
         panel.contentView = host
