@@ -6,20 +6,23 @@ import Foundation
 
 enum HerdrError: Error, CustomStringConvertible {
     case connect(String)
+    case unavailable(String)
     case server(String)
     case malformed
 
     var description: String {
         switch self {
         case .connect(let reason): return "herdr socket unavailable: \(reason)"
+        case .unavailable(let reason): return "herdr-core unavailable: \(reason)"
         case .server(let message): return "herdr error: \(message)"
         case .malformed: return "herdr returned an unreadable response"
         }
     }
 }
 
-final class HerdrClient {
+final class HerdrClient: HerdrRPC {
     let socketPath: String
+    let pastesAndSubmits = false
     private let queue = DispatchQueue(label: "herdr.island.rpc", attributes: .concurrent)
     private var subscriptionFD: Int32 = -1
     private var stopped = false
@@ -46,7 +49,7 @@ final class HerdrClient {
     }
 
     /// Runs a request off the main thread and delivers the result on main.
-    func callAsync(_ method: String, _ params: JSON = [:], completion: ((Result<JSON, Error>) -> Void)? = nil) {
+    func request(_ method: String, _ params: JSON, completion: ((Result<JSON, Error>) -> Void)?) {
         queue.async {
             let result = Result { try self.call(method, params) }
             if case .failure(let error) = result { Log.error("\(method) failed: \(error)") }
@@ -54,6 +57,12 @@ final class HerdrClient {
             DispatchQueue.main.async { completion(result) }
         }
     }
+
+    // MARK: - The terminal app that hosts the TUI
+
+    func activate(paneId: String) { TerminalActivator.activateHost() }
+
+    func isFrontmost(paneId: String) -> Bool { TerminalActivator.isHostFrontmost() }
 
     // MARK: - Subscription
 
@@ -168,6 +177,10 @@ final class LineReader {
 
 enum Log {
     static func error(_ message: String) {
+        FileHandle.standardError.write(Data("[herdr-island] \(message)\n".utf8))
+    }
+
+    static func info(_ message: String) {
         FileHandle.standardError.write(Data("[herdr-island] \(message)\n".utf8))
     }
 }

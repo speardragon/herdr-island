@@ -239,9 +239,14 @@ intensity = 0.6            # 0.1 – 1
 
 [stage]
 wrap_lines = false         # wrap long commands and code in the live view (the header's Wrap button)
+
+[connection]
+backend = "tui"            # "tui": the herdr TUI server · "app": the Herdr desktop app (herdr-core)
 ```
 
-Run the `reload` action after editing the file.
+Run the `reload` action after editing the file. `backend` is read when the island starts: run `quit`, then start it again (or set `HERDR_ISLAND_BACKEND=app`).
+
+With `backend = "app"` the island reads agents from herdr-core through `hc connect` (found in `HERDR_CORE_BIN`, `~/.local/bin`, Homebrew or `PATH`) and focuses them with the app's CLI (`HERDR_APP_BIN`, else `Herdr.app`). The Herdr app has no plugin hooks, so start the island yourself (for example from a LaunchAgent). Done follows the app: an agent that finished while you weren't looking, until you look at it.
 
 </details>
 

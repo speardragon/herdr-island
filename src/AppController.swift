@@ -78,11 +78,11 @@ final class AppController: NSObject {
         case let value where value.hasPrefix("detail:"):
             if let agent = store.agents[String(value.dropFirst(7))] { target()?.openDetail(agent, stage: false) }
         case let value where value.hasPrefix("choose:") || value.hasPrefix("answer:"):
-            // Same path as the island's buttons: choose:PANE:N, answer:PANE:N:TEXT (PANE is like w1:p2).
-            let parts = value.split(separator: ":", maxSplits: 5, omittingEmptySubsequences: false).map(String.init)
-            guard parts.count >= 4, let agent = store.agents["\(parts[1]):\(parts[2])"], let number = Int(parts[3]),
-                  let option = store.prompts[agent.paneId]?.options.first(where: { $0.number == number }) else { return }
-            if parts[0] == "answer", parts.count == 5 { store.answer(parts[4], using: option, for: agent) } else { store.choose(option, for: agent) }
+            // Same path as the island's buttons: choose:PANE:N, answer:PANE:N:TEXT (PANE is w1:p2 or t4).
+            guard let command = IslandCommand.answer(value, panes: Array(store.agents.keys)),
+                  let agent = store.agents[command.pane],
+                  let option = store.prompts[agent.paneId]?.options.first(where: { $0.number == command.number }) else { return }
+            if let text = command.text { store.answer(text, using: option, for: agent) } else { store.choose(option, for: agent) }
         case let value where value.hasPrefix("stage:"):
             if let agent = store.agents[String(value.dropFirst(6))] { target()?.openDetail(agent, stage: true) }
         case "cycle-mode":

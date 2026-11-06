@@ -16,6 +16,8 @@ import Foundation
 //              blocked_sound = "none" | macOS sound name, done_sound = "none"
 //   [glow]     enabled = true, blocked_color = "FF453A", done_color = "30D158", recap_color = "BF5AF2", intensity = 0.6 (0.1–1)
 //   [stage]    wrap_lines = false   wrap long commands and code on the live stage instead of scrolling sideways
+//   [connection] backend = "tui" | "app"   the herdr TUI server, or the Herdr app's herdr-core (read at start;
+//              HERDR_ISLAND_BACKEND overrides it)
 
 enum DisplayMode: String, CaseIterable {
     case auto, notch, menubar, both
@@ -36,6 +38,11 @@ enum PanelScreen: String, CaseIterable {
 
 enum PanelPosition: String, CaseIterable {
     case icon, right, center
+}
+
+/// Which herdr the island watches: the TUI's server socket, or herdr-core behind the Herdr app.
+enum Backend: String, CaseIterable {
+    case tui, app
 }
 
 enum AppLanguage: String, CaseIterable {
@@ -73,6 +80,7 @@ struct Config: Equatable {
     var blockedSound = "none"
     var doneSound = "none"
     var stageWrap = false
+    var backend: Backend = .tui
 
     static let pluginId = "speardragon.herdr-island"
 
@@ -135,6 +143,7 @@ struct Config: Equatable {
         c.blockedSound = values["behavior.blocked_sound"] ?? defaults.blockedSound
         c.doneSound = values["behavior.done_sound"] ?? defaults.doneSound
         c.stageWrap = bool("stage.wrap_lines", defaults.stageWrap)
+        c.backend = values["connection.backend"].flatMap(Backend.init(rawValue:)) ?? defaults.backend
         return c
     }
 

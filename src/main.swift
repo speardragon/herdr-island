@@ -61,7 +61,9 @@ try? "\(getpid())\n".write(to: stateDir.appendingPathComponent("daemon.pid"), at
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
 
-let store = AgentStore(client: HerdrClient())
+let startupConfig = Config.load()
+Log.info("starting with the \(startupConfig.backend.rawValue) backend (HERDR_ISLAND_BACKEND overrides)")
+let store = AgentStore(client: HerdrBackend.makeClient(startupConfig))
 let controller = AppController(store: store, settings: SettingsModel())
 controller.start()
 if !command.isEmpty { controller.run(command) }

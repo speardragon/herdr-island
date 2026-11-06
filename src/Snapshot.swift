@@ -6,7 +6,7 @@ import SwiftUI
 
 enum Snapshot {
     static func run(into directory: URL) {
-        let store = AgentStore(client: HerdrClient())
+        let store = AgentStore(client: HerdrBackend.makeClient(Config.load()))
         store.start()
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
             let variants: [(String, IslandState.Style, Bool)] = [

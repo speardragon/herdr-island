@@ -18,7 +18,7 @@ final class AgentStore: ObservableObject {
     /// Fired after jumping to an agent's pane: the user is heading to the terminal, so the island can close.
     let didFocus = PassthroughSubject<Agent, Never>()
 
-    private let client: HerdrClient
+    private let client: HerdrRPC
     private var since: [String: Date] = [:]
     private var dismissed: [String: AgentStatus] = [:]
     private var workspaceLabels: [String: String] = [:]
@@ -46,7 +46,7 @@ final class AgentStore: ObservableObject {
         "tab.created", "tab.renamed", "tab.closed",
     ]
 
-    init(client: HerdrClient) {
+    init(client: HerdrRPC) {
         self.client = client
     }
 
@@ -154,7 +154,7 @@ final class AgentStore: ObservableObject {
 
     private func announce(_ paneId: String) {
         guard let agent = agents[paneId], agent.status.needsAttention else { return }
-        if agent.focused && TerminalActivator.isHostFrontmost() {
+        if agent.focused && client.isFrontmost(paneId: paneId) {
             // You are looking at this pane in the terminal already: don't pop the island over it.
             // A finished agent you are looking at is also hidden; a blocked one stays listed.
             if agent.status != .blocked { dismissed[paneId] = agent.status }
@@ -350,8 +350,10 @@ final class AgentStore: ObservableObject {
         guard !trimmed.isEmpty else { return }
         withFreshPrompt(agent) { [weak self] prompt in
             guard let prompt = prompt else { return }
+            guard let self = self else { return }
             let target = prompt.options.first { $0.number == option.number } ?? option
-            self?.perform(AnswerKeys.freeText(trimmed, using: target, in: prompt), on: agent)
+            let steps = AnswerKeys.freeText(trimmed, using: target, in: prompt)
+            self.perform(self.client.pastesAndSubmits ? AnswerKeys.collapsingSubmit(steps) : steps, on: agent)
         }
     }
 
@@ -390,6 +392,8 @@ final class AgentStore: ObservableObject {
             client.callAsync("agent.send_keys", ["target": pane, "keys": keys]) { _ in next() }
         case .text(let text):
             client.callAsync("pane.send_text", ["pane_id": pane, "text": text]) { _ in next() }
+        case .submit(let text):
+            client.callAsync("pane.submit_text", ["pane_id": pane, "text": text]) { _ in next() }
         }
     }
 
@@ -401,7 +405,7 @@ final class AgentStore: ObservableObject {
     func focus(_ agent: Agent) {
         client.callAsync("agent.focus", ["target": agent.paneId]) { [weak self] result in
             guard case .success = result else { return }
-            TerminalActivator.activateHost()
+            self?.client.activate(paneId: agent.paneId)
             if agent.status.reported == .done { self?.dismiss(agent) }
             self?.didFocus.send(agent)
         }

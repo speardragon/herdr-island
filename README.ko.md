@@ -239,9 +239,14 @@ intensity = 0.6            # 0.1 ~ 1
 
 [stage]
 wrap_lines = false         # 라이브 뷰에서 긴 명령어·코드를 줄바꿈(헤더의 「줄바꿈」 버튼과 같음)
+
+[connection]
+backend = "tui"            # "tui": herdr TUI 서버 · "app": Herdr 데스크톱 앱(herdr-core)
 ```
 
-파일을 수정한 뒤에는 `reload` 액션을 실행하세요.
+파일을 수정한 뒤에는 `reload` 액션을 실행하세요. `backend`는 island가 시작할 때만 읽으므로 `quit` 후 다시 실행하세요(`HERDR_ISLAND_BACKEND=app`으로 덮어쓸 수도 있어요).
+
+`backend = "app"`이면 island는 `hc connect`로 herdr-core에서 에이전트를 읽고(`HERDR_CORE_BIN`, `~/.local/bin`, Homebrew, `PATH` 순으로 찾음), 앱 CLI(`HERDR_APP_BIN`, 없으면 `Herdr.app`)로 포커스를 옮겨요. Herdr 앱에는 플러그인 훅이 없어서 island는 직접 띄워야 해요(예: LaunchAgent). 완료(done) 판단은 앱과 같아요. 보고 있지 않을 때 끝난 에이전트는, 직접 볼 때까지 완료로 남아요.
 
 </details>
 

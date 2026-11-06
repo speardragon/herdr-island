@@ -301,6 +301,7 @@ runQuestionTests()
 runHighlightTests()
 runDigestTests()
 runMongoTests()
+runCoreTests()
 
 print("\(checks - failures)/\(checks) checks passed")
 exit(failures == 0 ? 0 : 1)

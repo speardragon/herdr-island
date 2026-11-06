@@ -65,6 +65,8 @@ struct ParsedPrompt: Hashable {
 enum AnswerStep: Equatable {
     case keys([String])
     case text(String)
+    /// Paste and press Enter in one call, for backends that only submit pasted text (herdr-core).
+    case submit(String)
 }
 
 // Claude Code selects an option by its digit, except while the cursor sits in the free-text
@@ -81,6 +83,12 @@ enum AnswerKeys {
         let typed = option.typedText ?? ""
         let clear: [AnswerStep] = typed.isEmpty ? [] : [.keys(Array(repeating: "backspace", count: typed.count))]
         return focus + clear + [.text(text), .keys(["enter"])]
+    }
+
+    /// A trailing typed text and Enter as one `.submit`, for backends whose text input always submits.
+    static func collapsingSubmit(_ steps: [AnswerStep]) -> [AnswerStep] {
+        guard steps.count >= 2, case .text(let text) = steps[steps.count - 2], steps.last == .keys(["enter"]) else { return steps }
+        return Array(steps.dropLast(2)) + [.submit(text)]
     }
 }
 
