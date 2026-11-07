@@ -140,7 +140,7 @@ Dynamic Island처럼 펼쳐지고, 그 자리에서 바로 응답할 수 있습�
 
 ## 설치
 
-**요구 사항**: macOS 13 이상 · [herdr](https://herdr.dev) 0.9.0 이상 · Xcode Command Line Tools(`xcode-select --install`)
+**요구 사항**: macOS 13 이상 · [herdr](https://herdr.dev) 0.9.0 이상 또는 Herdr 앱 · Xcode Command Line Tools(`xcode-select --install`)
 
 ```sh
 herdr plugin install speardragon/herdr-island
@@ -154,6 +154,15 @@ herdr plugin link ./herdr-island
 ```
 
 설치 과정에서 Swift 헬퍼가 빌드되고, 다음 에이전트 이벤트부터 자동으로 실행됩니다. 별도로 실행할 필요는 없습니다.
+
+**Herdr 데스크톱 앱**에는 플러그인 훅이 없으므로, 저장소를 클론한 뒤 설치 스크립트를 실행합니다. 스크립트는 island를 빌드하고 `backend = "app"`을 설정한 뒤, 로그인할 때와 비정상 종료됐을 때 island를 띄우는 LaunchAgent를 등록합니다.
+
+```sh
+git clone https://github.com/speardragon/herdr-island.git
+./herdr-island/bin/install-launch-agent.sh
+```
+
+업데이트할 때는 `git pull` 후 다시 실행합니다. `--uninstall`로 LaunchAgent를 제거할 수 있습니다.
 
 버전별 변경 사항은 [CHANGELOG](CHANGELOG.md)와 [릴리스 페이지](https://github.com/speardragon/herdr-island/releases)에서 볼 수 있습니다.
 
@@ -244,9 +253,9 @@ wrap_lines = false         # 라이브 뷰에서 긴 명령어·코드를 줄바
 backend = "tui"            # "tui": herdr TUI 서버 · "app": Herdr 데스크톱 앱(herdr-core)
 ```
 
-파일을 수정한 뒤에는 `reload` 액션을 실행하세요. `backend`는 island가 시작할 때만 읽으므로 `quit` 후 다시 실행하세요(`HERDR_ISLAND_BACKEND=app`으로 덮어쓸 수도 있어요).
+파일을 수정한 뒤에는 `reload` 액션을 실행하세요. `backend`는 island가 시작할 때만 읽으므로 `quit` 후 다시 실행하세요(`HERDR_ISLAND_BACKEND=app`으로 덮어쓸 수도 있습니다). LaunchAgent로 실행 중이면 `launchctl kickstart -k gui/$(id -u)/com.speardragon.herdr-island`으로 재시작합니다.
 
-`backend = "app"`이면 island는 `hc connect`로 herdr-core에서 에이전트를 읽고(`HERDR_CORE_BIN`, `~/.local/bin`, Homebrew, `PATH` 순으로 찾음), 앱 CLI(`HERDR_APP_BIN`, 없으면 `Herdr.app`)로 포커스를 옮겨요. Herdr 앱에는 플러그인 훅이 없어서 island는 직접 띄워야 해요(예: LaunchAgent). 완료(done) 판단은 앱과 같아요. 보고 있지 않을 때 끝난 에이전트는, 직접 볼 때까지 완료로 남아요.
+`backend = "app"`이면 island는 `hc connect`로 herdr-core에서 에이전트를 읽고(`HERDR_CORE_BIN`, `~/.local/bin`, Homebrew, `PATH` 순으로 찾음), 앱 CLI(`HERDR_APP_BIN`, 없으면 `Herdr.app`)로 포커스를 옮깁니다. Herdr 앱에는 플러그인 훅이 없으므로 `bin/install-launch-agent.sh`가 LaunchAgent로 island를 띄웁니다([설치](#설치) 참고). 완료(done) 판단은 앱과 같습니다. 보고 있지 않을 때 끝난 에이전트는 직접 볼 때까지 완료로 남습니다.
 
 </details>
 

@@ -140,7 +140,7 @@ A regular settings window, with changes applied at once and saved to `config.tom
 
 ## Install
 
-**Requirements**: macOS 13 or later · [herdr](https://herdr.dev) 0.9.0 or later · Xcode Command Line Tools (`xcode-select --install`)
+**Requirements**: macOS 13 or later · [herdr](https://herdr.dev) 0.9.0 or later, or the Herdr app · Xcode Command Line Tools (`xcode-select --install`)
 
 ```sh
 herdr plugin install speardragon/herdr-island
@@ -154,6 +154,15 @@ herdr plugin link ./herdr-island
 ```
 
 The Swift helper builds during install and starts with the next agent event. There is nothing else to launch.
+
+**With the Herdr desktop app**, which has no plugin hooks, clone the repository and run the installer instead. It builds the island, sets `backend = "app"` and registers a LaunchAgent that starts it at login and again after a crash:
+
+```sh
+git clone https://github.com/speardragon/herdr-island.git
+./herdr-island/bin/install-launch-agent.sh
+```
+
+To update, `git pull` and run it again. `--uninstall` removes the LaunchAgent.
 
 What changed in each version is in the [changelog](CHANGELOG.md) and on the [releases page](https://github.com/speardragon/herdr-island/releases).
 
@@ -244,9 +253,9 @@ wrap_lines = false         # wrap long commands and code in the live view (the h
 backend = "tui"            # "tui": the herdr TUI server · "app": the Herdr desktop app (herdr-core)
 ```
 
-Run the `reload` action after editing the file. `backend` is read when the island starts: run `quit`, then start it again (or set `HERDR_ISLAND_BACKEND=app`).
+Run the `reload` action after editing the file. `backend` is read when the island starts: run `quit`, then start it again (or set `HERDR_ISLAND_BACKEND=app`). Under the LaunchAgent, restart it with `launchctl kickstart -k gui/$(id -u)/com.speardragon.herdr-island`.
 
-With `backend = "app"` the island reads agents from herdr-core through `hc connect` (found in `HERDR_CORE_BIN`, `~/.local/bin`, Homebrew or `PATH`) and focuses them with the app's CLI (`HERDR_APP_BIN`, else `Herdr.app`). The Herdr app has no plugin hooks, so start the island yourself (for example from a LaunchAgent). Done follows the app: an agent that finished while you weren't looking, until you look at it.
+With `backend = "app"` the island reads agents from herdr-core through `hc connect` (found in `HERDR_CORE_BIN`, `~/.local/bin`, Homebrew or `PATH`) and focuses them with the app's CLI (`HERDR_APP_BIN`, else `Herdr.app`). The Herdr app has no plugin hooks, so `bin/install-launch-agent.sh` starts the island from a LaunchAgent (see [Install](#install)). Done follows the app: an agent that finished while you weren't looking, until you look at it.
 
 </details>
 
