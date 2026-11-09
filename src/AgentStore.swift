@@ -8,6 +8,8 @@ import Combine
 final class AgentStore: ObservableObject {
     @Published private(set) var agents: [String: Agent] = [:]
     @Published private(set) var prompts: [String: ParsedPrompt] = [:]
+    /// Blocked panes whose screen shows Claude running a hook rather than a prompt.
+    @Published private(set) var hookWaits: [String: HookWait] = [:]
     @Published private(set) var connected = false
     @Published private(set) var busy: Set<String> = []
     /// Recap text for panes whose done is only Claude Code's recap, shown on their card.
@@ -129,7 +131,10 @@ final class AgentStore: ObservableObject {
         if statusChanged {
             since[agent.paneId] = Date()
             dismissed[agent.paneId] = nil
-            if agent.status != .blocked { prompts[agent.paneId] = nil }
+            if agent.status != .blocked {
+                prompts[agent.paneId] = nil
+                hookWaits[agent.paneId] = nil
+            }
             parseRetries[agent.paneId] = nil
             lastParsedAt[agent.paneId] = nil
             if agent.status == .blocked {
@@ -191,6 +196,7 @@ final class AgentStore: ObservableObject {
         agents[paneId] = nil
         recaps[paneId] = nil
         prompts[paneId] = nil
+        hookWaits[paneId] = nil
         since[paneId] = nil
         dismissed[paneId] = nil
     }
@@ -254,13 +260,18 @@ final class AgentStore: ObservableObject {
                     self.parseRetries[paneId] = nil
                     // Unchanged screens would only redraw the island.
                     if parsed != self.prompts[paneId] { self.prompts[paneId] = parsed }
+                    if self.hookWaits[paneId] != nil { self.hookWaits[paneId] = nil }
                 } else {
                     let justAnswered = self.lastParsedAt[paneId].map { Date().timeIntervalSince($0) < Self.answerGrace } ?? false
                     // Keep showing the last good prompt through an answer; the status change removes the card.
                     if !justAnswered {
                         self.prompts[paneId] = nil
-                        Self.saveUnparsed(text, pane: paneId)
+                        // A running hook has nothing to answer: say so, and don't keep it as a parse failure.
+                        let wait = PromptParser.hookWait(text)
+                        if wait != self.hookWaits[paneId] { self.hookWaits[paneId] = wait }
+                        if wait == nil { Self.saveUnparsed(text, pane: paneId) }
                     }
+                    // Keeps reading: the hook can end in a real prompt without a status change.
                     self.scheduleRetry(paneId)
                 }
             }
@@ -272,6 +283,11 @@ final class AgentStore: ObservableObject {
     /// so while the island is open the blocked screens are simply read again.
     func refreshBlockedPrompts() {
         for agent in agents.values where agent.status == .blocked { readPrompt(agent.paneId) }
+    }
+
+    /// What a blocked pane's hook is, when its screen shows a running hook instead of a prompt.
+    func hookWait(_ paneId: String) -> HookWait? {
+        agents[paneId]?.status == .blocked ? hookWaits[paneId] : nil
     }
 
     /// Blocked, nothing parsed yet, and still inside the first-read grace: show "Reading…", not a failure.
@@ -306,10 +322,11 @@ final class AgentStore: ObservableObject {
     }
 
     /// Fills the store with a fake agent and prompt, for `--snapshot` previews only.
-    func loadPreview(_ agent: Agent, prompt: ParsedPrompt?, recap: String? = nil, since date: Date = Date()) {
+    func loadPreview(_ agent: Agent, prompt: ParsedPrompt?, recap: String? = nil, hookWait: HookWait? = nil, since date: Date = Date()) {
         agents[agent.paneId] = agent
         since[agent.paneId] = date
         prompts[agent.paneId] = prompt
+        hookWaits[agent.paneId] = hookWait
         recaps[agent.paneId] = recap
         connected = true
     }
@@ -326,7 +343,7 @@ final class AgentStore: ObservableObject {
         attention.map { item in
             let prompt = item.prompt.map { p in
                 "\(p.kind) title=\(p.title ?? "-") question=\(p.question)\n" + p.options.map { "    \($0.number). \($0.label)" }.joined(separator: "\n")
-            } ?? "no prompt"
+            } ?? hookWait(item.agent.paneId).map { "waiting on its \($0.hook) hook" } ?? "no prompt"
             let screen = lastScreens[item.agent.paneId].map { "\n--- screen ---\n\($0)" } ?? ""
             return "== \(item.agent.paneId) \(item.agent.kind) \(item.agent.status)\n\(prompt)\(screen)"
         }.joined(separator: "\n\n")

@@ -60,12 +60,26 @@ enum Snapshot {
             render(IslandView(store: store, state: state), size: NSSize(width: 620, height: 900),
                    to: directory.appendingPathComponent("preview-\(name).png"))
         }
+        renderHookWaitPreview(into: directory)
         renderRecapPreview(into: directory)
         renderQuestionPreview(fixtures: fixtures, into: directory)
         renderToolPreview(fixtures: fixtures, into: directory)
         renderMongoPreview(into: directory)
         renderImagePreview(into: directory)
         renderWrapPreview(into: directory)
+    }
+
+    /// A blocked Claude whose screen shows a running PreToolUse hook instead of a prompt.
+    private static func renderHookWaitPreview(into directory: URL) {
+        guard let agent = Agent(json: ["pane_id": "preview:hook-wait", "agent": "claude", "agent_status": "blocked",
+                                       "workspace_id": "preview", "terminal_title": L("Waiting on a hook", "hook 대기"),
+                                       "cwd": "/tmp/preview"]) else { return }
+        let store = AgentStore(client: HerdrClient())
+        store.loadPreview(agent, prompt: nil, hookWait: HookWait(hook: "PreToolUse"))
+        let state = IslandState(style: .notch(width: 185, height: 32), settings: SettingsModel(config: Config()), onOpenSettings: {})
+        state.expanded = true
+        render(IslandView(store: store, state: state), size: NSSize(width: 620, height: 420),
+               to: directory.appendingPathComponent("preview-hook-wait.png"))
     }
 
     /// MongoDB find, aggregate, count and list-collections with made-up documents.

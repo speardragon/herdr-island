@@ -99,6 +99,38 @@ func testNumberedListInOutputIsIgnored() {
     expect(PromptParser.parse(screen) == nil, "a list far above the input box is not a prompt")
 }
 
+/// The bottom of a Claude screen with `spinner` just above the input box.
+private func hookScreen(_ spinner: String, panel: Bool = false, above: String = "● Checking the tree first.") -> String {
+    let edge = panel ? "   │ EXPLORER     │ CHANGES 3 files" : ""
+    return """
+    \(above)\(edge)
+    \(edge)
+      Ran 2 shell commands\(edge)
+    \(edge)
+    \(spinner)\(edge)
+    \(panel ? "                                     │" : "")
+    ────────────────────────────────────────
+    ❯\u{a0}
+    ────────────────────────────────────────
+      [Opus 5.5] │ ray-brain git:(main) │ ⏱️  19m
+      ⏵⏵ auto mode on · 1 shell
+    """
+}
+
+func testHookWait() {
+    let pre = PromptParser.hookWait(hookScreen("✽ Recombobulating… (running PreToolUse hook · 5m 52s · ↓ 35.3k tokens)"))
+    expect(pre == HookWait(hook: "PreToolUse"), "spinner above the input box names the hook, got \(String(describing: pre))")
+    let panel = PromptParser.hookWait(hookScreen("✢ Misting… (running PreToolUse hook · 5m 13s · ↓ 24.4k tokens)", panel: true))
+    expect(panel == HookWait(hook: "PreToolUse"), "found beside a side panel, got \(String(describing: panel))")
+    let stop = PromptParser.hookWait(hookScreen("✻ Wrapping up… (running stop hooks…)"))
+    expect(stop == HookWait(hook: "stop"), "plural, lowercase hook names, got \(String(describing: stop))")
+    expect(PromptParser.hookWait(hookScreen("✻ Baked for 3s")) == nil, "a plain spinner is no hook wait")
+    let quoted = hookScreen("✻ Baked for 3s", above: "● The log said (running PreToolUse hook · 2s) earlier.")
+    expect(PromptParser.hookWait(quoted) == nil, "hook text in the transcript, not above the input box, is ignored")
+    expect(PromptParser.hookWait(fixture("claude-idle.txt")) == nil, "idle screen has no hook wait")
+    expect(PromptParser.hookWait(fixture("claude-bash-permission.txt")) == nil, "a real prompt is no hook wait")
+}
+
 func testCodexStyleApproval() {
     let screen = """
     • Running mkdir -p foo
@@ -288,6 +320,7 @@ testReview()
 testIdleScreenHasNoPrompt()
 testNumberedListInOutputIsIgnored()
 testCodexStyleApproval()
+testHookWait()
 testFreeTextRowWithTypedText()
 testAnswerKeyPlans()
 testQuotedQuestionAndNextRow()

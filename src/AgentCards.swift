@@ -17,7 +17,10 @@ struct AttentionCard: View {
                     PromptView(prompt: prompt, agent: agent, store: store)
                         .id(prompt)
                 } else if store.isReadingPrompt(agent.paneId) {
+                    // Before AskUserQuestion draws, a short PreToolUse hook often runs: keep "Reading…" through it.
                     readingPrompt
+                } else if let wait = store.hookWait(agent.paneId) {
+                    hookWaiting(wait)
                 } else {
                     unreadablePrompt
                 }
@@ -51,6 +54,27 @@ struct AttentionCard: View {
             Spacer()
         }
         .padding(.vertical, 4)
+    }
+
+    /// Claude is running a hook (which may be waiting on you somewhere else): nothing to answer here.
+    private func hookWaiting(_ wait: HookWait) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: "hourglass")
+                    .foregroundColor(Theme.blocked)
+                Text(L("Waiting for its \(wait.hook) hook to finish; there is nothing to answer here.",
+                       "\(wait.hook) hook이 끝나기를 기다리는 중이에요. 여기서 답할 질문은 없어요."))
+                    .font(.system(size: 12.5))
+                    .foregroundColor(Theme.secondaryText)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            HStack(spacing: 8) {
+                Spacer()
+                PillButton(title: L("Go to terminal", "터미널로 이동"), systemImage: "arrow.up.forward.app", tint: Theme.blocked, filled: true) {
+                    store.focus(agent)
+                }
+            }
+        }
     }
 
     /// The prompt could not be read into buttons: show the bottom of the terminal so the
