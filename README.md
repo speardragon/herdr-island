@@ -155,14 +155,19 @@ herdr plugin link ./herdr-island
 
 The Swift helper builds during install and starts with the next agent event. There is nothing else to launch.
 
-**With the Herdr desktop app**, which has no plugin hooks, clone the repository and run the installer instead. It builds the island, sets `backend = "app"` and registers a LaunchAgent that starts it at login and again after a crash:
+**With the Herdr desktop app**, which has no plugin hooks, run the installer instead. It downloads the source into `~/.local/share/herdr-island`, builds the island there, sets `backend = "app"` and registers a LaunchAgent that starts it at login and again after a crash:
 
 ```sh
-git clone https://github.com/speardragon/herdr-island.git
-./herdr-island/bin/install-launch-agent.sh
+curl -fsSL https://raw.githubusercontent.com/speardragon/herdr-island/main/bin/install.sh | sh
 ```
 
-To update, `git pull` and run it again. `--uninstall` removes the LaunchAgent.
+Run the same line to update. The LaunchAgent runs the island from that folder, so leave it in place. To remove the LaunchAgent, add `-s -- --uninstall`; delete the folder afterwards if you no longer want the source:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/speardragon/herdr-island/main/bin/install.sh | sh -s -- --uninstall
+```
+
+In a clone of your own, run `bin/install-launch-agent.sh` instead to register that clone.
 
 What changed in each version is in the [changelog](CHANGELOG.md) and on the [releases page](https://github.com/speardragon/herdr-island/releases).
 

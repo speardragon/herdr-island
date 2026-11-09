@@ -155,14 +155,19 @@ herdr plugin link ./herdr-island
 
 설치 과정에서 Swift 헬퍼가 빌드되고, 다음 에이전트 이벤트부터 자동으로 실행됩니다. 별도로 실행할 필요는 없습니다.
 
-**Herdr 데스크톱 앱**에는 플러그인 훅이 없으므로, 저장소를 클론한 뒤 설치 스크립트를 실행합니다. 스크립트는 island를 빌드하고 `backend = "app"`을 설정한 뒤, 로그인할 때와 비정상 종료됐을 때 island를 띄우는 LaunchAgent를 등록합니다.
+**Herdr 데스크톱 앱**에는 플러그인 훅이 없으므로 설치 스크립트를 실행합니다. 스크립트는 소스를 `~/.local/share/herdr-island`에 받아 island를 빌드하고 `backend = "app"`을 설정한 뒤, 로그인할 때와 비정상 종료됐을 때 island를 띄우는 LaunchAgent를 등록합니다.
 
 ```sh
-git clone https://github.com/speardragon/herdr-island.git
-./herdr-island/bin/install-launch-agent.sh
+curl -fsSL https://raw.githubusercontent.com/speardragon/herdr-island/main/bin/install.sh | sh
 ```
 
-업데이트할 때는 `git pull` 후 다시 실행합니다. `--uninstall`로 LaunchAgent를 제거할 수 있습니다.
+업데이트할 때도 같은 명령을 실행합니다. LaunchAgent가 이 폴더에서 island를 실행하므로 폴더를 옮기거나 지우지 마세요. LaunchAgent를 제거하려면 `-s -- --uninstall`을 붙입니다. 소스까지 지우려면 그다음에 폴더를 삭제합니다.
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/speardragon/herdr-island/main/bin/install.sh | sh -s -- --uninstall
+```
+
+직접 클론한 저장소에서는 `bin/install-launch-agent.sh`를 실행하면 그 클론 기준으로 등록됩니다.
 
 버전별 변경 사항은 [CHANGELOG](CHANGELOG.md)와 [릴리스 페이지](https://github.com/speardragon/herdr-island/releases)에서 볼 수 있습니다.
 
